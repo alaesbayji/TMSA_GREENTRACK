@@ -3,15 +3,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import EntrepriseMere, Entreprise, Aspect, Indicateur, Utilisateur
+from .models import EntrepriseMere, Entreprise, Aspect, Indicateur, Utilisateur,PrefectureProvince,Commune,EngagementIndicateur,Suivi
 from .serializers import (
     EntrepriseMereSerializer, 
     EntrepriseSerializer, 
     AspectSerializer, 
     IndicateurSerializer,
     SignupSerializer,
-    LoginSerializer
+    LoginSerializer,PrefectureProvinceSerializer,CommuneSerializer,EngagementIndicateurSerializer,SuiviSerializer
 )
+from django.contrib.auth.hashers import make_password
 
 
 # Authentication Views
@@ -19,11 +20,24 @@ class SignupView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = SignupSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        data = request.data
+        try:
+            utilisateur = Utilisateur.objects.create(
+                email=data.get('email'),
+                nom=data.get('nom'),
+                prenom=data.get('prenom'),
+                password=make_password(data.get('password'))  # Hash du mot de passe
+            )
+            return Response({
+                "idUtilisateur": utilisateur.idUtilisateur,
+                "nom": utilisateur.nom,
+                "prenom": utilisateur.prenom,
+                "email": utilisateur.email,
+                "message": "Inscription réussie"
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class LoginView(APIView):
@@ -48,16 +62,13 @@ class TestTokenView(APIView):
             "message": "Token valide !",
             "user": {
                 "email": request.user.email,
-                "id": request.user.id
+                "id": request.user.idUtilisateur
             }
         })
-# Modifiez vos vues existantes pour ajouter la permission
-class EntrepriseMereListCreateView(generics.ListCreateAPIView):
-    queryset = EntrepriseMere.objects.all()
-    serializer_class = EntrepriseMereSerializer
 
 # EntrepriseMere Views
 class EntrepriseMereListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = EntrepriseMere.objects.all()
     serializer_class = EntrepriseMereSerializer
 
@@ -98,3 +109,34 @@ class IndicateurListCreateView(generics.ListCreateAPIView):
 class IndicateurRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Indicateur.objects.all()
     serializer_class = IndicateurSerializer
+class ProvinceListCreateView(generics.ListCreateAPIView):
+    queryset = PrefectureProvince.objects.all()
+    serializer_class = PrefectureProvinceSerializer
+
+class ProvinceRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = PrefectureProvince.objects.all()
+    serializer_class = PrefectureProvinceSerializer
+class CommuneListCreateView(generics.ListCreateAPIView):
+    queryset = Commune.objects.all()
+    serializer_class = CommuneSerializer
+
+
+class CommuneRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Commune.objects.all()
+    serializer_class = CommuneSerializer
+class EngagementIndicateurListCreateView(generics.ListCreateAPIView):
+    queryset = EngagementIndicateur.objects.all()
+    serializer_class = EngagementIndicateurSerializer
+
+
+class EngagementIndicateurRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = EngagementIndicateur.objects.all()
+    serializer_class = EngagementIndicateurSerializer
+class SuiviListCreateView(generics.ListCreateAPIView):
+    queryset = Suivi.objects.all()
+    serializer_class = SuiviSerializer
+
+
+class SuiviRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Suivi.objects.all()
+    serializer_class = SuiviSerializer

@@ -1,11 +1,22 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
-class Utilisateur(models.Model):
-    idUtilisateur = models.AutoField(primary_key=True)
+from django.contrib.auth.hashers import make_password
+
+
+class Utilisateur(AbstractUser):
+    idUtilisateur = models.AutoField(primary_key=True , default=1)  # Champ ID manuel
+    email = models.EmailField(unique=True , default = 'admin@admin.com')
+    password = models.CharField(max_length=100, default=make_password('password123'))
+    username = None
     nom = models.CharField(max_length=100)
     prenom = models.CharField(max_length=100)
-    email = models.EmailField(unique=True)
-    motDePasse = models.CharField(max_length=100)
+    USERNAME_FIELD = 'email'  # Utilisation de l'email pour l'authentification
+    REQUIRED_FIELDS = ['nom', 'prenom']  # Champs obligatoires supplémentaires
+
+    def __str__(self):
+        return f"{self.nom} {self.prenom} ({self.email})"
 
 class ResponsableEntreprise(Utilisateur):
     id_entreprise_mere = models.IntegerField()
@@ -23,7 +34,7 @@ class PrefectureProvince(models.Model):
 
 class Commune(models.Model):
     id_commune = models.AutoField(primary_key=True)
-    id_pref_prov = models.ForeignKey(PrefectureProvince, on_delete=models.CASCADE)
+    id_pref_prov = models.ForeignKey(PrefectureProvince, on_delete=models.CASCADE , null=False)
     nom = models.CharField(max_length=255)
 
 class EntrepriseMere(models.Model):
@@ -38,11 +49,11 @@ class Entreprise(models.Model):
     nom = models.CharField(max_length=255)
     adresse = models.CharField(max_length=255)
     zone = models.CharField(max_length=255)
-    montantInvestissement = models.FloatField()
-    nombreEmploi = models.IntegerField()
-    superficieTotale = models.FloatField()
-    secteurDominant = models.CharField(max_length=255)
-    prefectureProvince = models.CharField(max_length=255)
+    montant_investissement = models.FloatField()
+    nombre_emploi = models.IntegerField()
+    superficie_totale = models.FloatField()
+    secteur_dominant = models.CharField(max_length=255)
+    prefecture_province = models.CharField(max_length=255)
     DAE = models.FileField(upload_to='documents/', null=True, blank=True)
     EIE_PSSE = models.FileField(upload_to='documents/', null=True, blank=True)
 
