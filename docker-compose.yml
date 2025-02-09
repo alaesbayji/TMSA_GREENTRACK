@@ -7,9 +7,9 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: postgres
+      POSTGRES_DB: tmsa_greentrack
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data  # Syntaxe corrigée avec tiret
     ports:
       - "5432:5432"
     networks:
@@ -20,19 +20,21 @@ services:
     container_name: django_container
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./backend:/app
+      - ./backend:/app  # Syntaxe corrigée avec tiret
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/postgres
+      DATABASE_URL: postgres://postgres:password@db:5432/tmsa_greentrack
     ports:
       - "8000:8000"
     depends_on:
       - db
+    networks:
+      - greentrack
 
   frontend:
     build: ./frontend
     container_name: react_container
     ports:
-      - "3000:3000"
+      - "3000:3000"  # Syntaxe corrigée avec tiret
     stdin_open: true
     tty: true
 
@@ -43,14 +45,14 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "80:80"
+      - "80:80"  # Syntaxe corrigée avec tiret
     depends_on:
       - db
     networks:
       - greentrack
 
 volumes:
-  postgres_data:
+  postgres_data:  # Syntaxe correcte pour les volumes nommés
 
 networks:
   greentrack:
