@@ -36,7 +36,7 @@ urlpatterns = [
 
     path('echeances/entreprise/<int:id_entreprise>/', views.EcheanceByEntrepriseView.as_view(), name='echeance-by-entreprise'),
     path('echeances/', views.EcheanceListView.as_view(), name='echeance-list'),
+
+    path('entreprises/', views.EntrepriseAPIView.as_view(), name='entreprises-list'),
     
-
-
 ]

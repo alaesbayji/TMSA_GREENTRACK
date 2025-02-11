@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import EntrepriseMere, Entreprise, Aspect, Indicateur, Utilisateur,PrefectureProvince,Commune,EngagementIndicateur,Suivi,Echeance,EngagementAspect
+from .models import EntrepriseMere, Entreprise, Aspect, Indicateur, Utilisateur,PrefectureProvince,Commune,EngagementIndicateur,Suivi,SuiviIndicateur,Echeance,EngagementAspect
 from .serializers import (
     EntrepriseMereSerializer, 
     EntrepriseSerializer, 
@@ -17,6 +17,7 @@ from django.utils import timezone
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth import authenticate
+from .permissions import IsAdminUser, IsResponsableEntreprise, IsResponsableSuivi
 
 
 # Authentication Views
@@ -68,7 +69,7 @@ class TestTokenView(APIView):
 
 # EntrepriseMere Views
 class EntrepriseMereListCreateView(generics.ListCreateAPIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsAdminUser]
     queryset = EntrepriseMere.objects.all()
     serializer_class = EntrepriseMereSerializer
 
@@ -176,7 +177,32 @@ class SuiviListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        serializer = SuiviSerializer(data=request.data)
+        data = request.data
+        id_engagement_aspect = data.get('id_engagement_aspect')
+        echeance_id = data.get('echeance')
+        suivi_indicateurs_data = data.get('suivi_indicateurs', [])
+
+        if not id_engagement_aspect or not echeance_id:
+            return Response({"error": "EngagementAspect et Echeance sont obligatoires."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérifiez les EngagementIndicateurs associés à cet EngagementAspect
+        engagement_indicateurs_attendus = EngagementIndicateur.objects.filter(
+            id_engagement_aspect_id=id_engagement_aspect
+        ).values_list('id_engagement_indicateur', flat=True)
+
+        # Liste des EngagementIndicateurs dans la requête
+        engagement_indicateurs_reçus = [item['engagement_indicateur'] for item in suivi_indicateurs_data]
+
+        # Vérifiez si tous les EngagementIndicateurs attendus sont présents
+        indicateurs_manquants = set(engagement_indicateurs_attendus) - set(engagement_indicateurs_reçus)
+        if indicateurs_manquants:
+            return Response(
+                {"error": f"Les EngagementIndicateurs suivants sont manquants de SuiviIndicateurs: {list(indicateurs_manquants)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Sauvegarde si validation réussie
+        serializer = SuiviSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
 
@@ -189,6 +215,7 @@ class SuiviListCreateView(generics.ListCreateAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class SuiviRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
@@ -217,5 +244,11 @@ class EcheanceByEntrepriseView(generics.ListAPIView):
         id_entreprise = self.kwargs['id_entreprise']
         return Echeance.objects.filter(engagement__id_entreprise=id_entreprise)
 
-
-
+class EntrepriseAPIView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    queryset = Entreprise.objects.prefetch_related(
+        'engagements_aspects__suivis__suivi_indicateurs',
+        'engagements_aspects__engagements_indicateurs',
+        'engagements_aspects__echeances'
+    ).all()
+    serializer_class = EntrepriseSerializer

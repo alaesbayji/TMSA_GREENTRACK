@@ -3,6 +3,28 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import BaseUserManager
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("L'email est obligatoire")
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Le superutilisateur doit avoir is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Le superutilisateur doit avoir is_superuser=True.')
+
+        return self.create_user(email, password, **extra_fields)
 
 class Utilisateur(AbstractUser):
     idUtilisateur = models.AutoField(primary_key=True)
@@ -12,6 +34,7 @@ class Utilisateur(AbstractUser):
     username = None  # Supprime l'usage par défaut de `username`
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['nom', 'prenom']
+    objects = CustomUserManager()
 
     def __str__(self):
         return f"{self.nom} {self.prenom} ({self.email})"
@@ -74,31 +97,35 @@ class Indicateur(models.Model):
 
 
 class EngagementAspect(models.Model):
+    # ajouter entreprise
     id_engagement_aspect = models.AutoField(primary_key=True)
+    id_entreprise = models.ForeignKey(Entreprise, on_delete=models.CASCADE, related_name='engagements_aspects',null=True, blank=True,)
     lieu_prelevement = models.CharField(max_length=255)
     methode_equipement = models.CharField(max_length=255)
     frequence = models.IntegerField()
     responsabilite = models.CharField(max_length=255)
     date_creation = models.DateField()  # Champ manuel pour saisir la date
 
-    def __str__(self):
-        return f"Aspect {self.id_engagement_aspect} - {self.engagement_indicateur.id_engagement_indicateur}"
+   
 class EngagementIndicateur(models.Model):
     id_engagement_indicateur = models.AutoField(primary_key=True)
-    id_entreprise = models.ForeignKey(Entreprise, on_delete=models.CASCADE, related_name='engagements')
-    id_indicateur = models.ForeignKey(Indicateur, on_delete=models.CASCADE, related_name='engagements')
-    id_engagement_aspect = models.ForeignKey(EngagementAspect, on_delete=models.CASCADE, related_name='aspects',null=True, blank=True,)
+    id_indicateur = models.ForeignKey(Indicateur, on_delete=models.CASCADE)
+    id_engagement_aspect = models.ForeignKey(EngagementAspect, on_delete=models.CASCADE, null=True, blank=True,related_name='engagements_indicateurs')
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['id_engagement_aspect', 'id_indicateur'],
+                name='unique_engagement_aspect_indicateur'
+            )
+        ]
 
-    def __str__(self):
-        return f"Engagement {self.id_engagement_indicateur} - {self.entreprise.nom}"
 class Echeance(models.Model):
     id_echeance = models.AutoField(primary_key=True)
     id_engagement_aspect = models.ForeignKey(EngagementAspect, on_delete=models.CASCADE, null=True, blank=True,related_name='echeances')
     date_limite = models.DateField()
     statut = models.CharField(max_length=50, choices=[('en attente', 'En attente'), ('effectuee', 'Effectuée')], default='en attente')
 
-    def __str__(self):
-        return f"Echéance {self.id_echeance} - {self.engagement_aspect.id_engagement_aspect}"
+   
 
 class Suivi(models.Model):
     id_suivi = models.AutoField(primary_key=True)

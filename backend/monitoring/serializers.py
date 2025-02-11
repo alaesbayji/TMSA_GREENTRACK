@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Utilisateur, ResponsableEntreprise, Admin, SuiviIndicateur,ResponsableSuiviTMSA, EntrepriseMere, Entreprise, EngagementAspect,PrefectureProvince, Commune, EngagementIndicateur, Suivi, Indicateur, Aspect,Echeance
 from django.contrib.auth import authenticate
 from django.db import transaction
+from django.contrib.auth.models import Group
 
 class SignupSerializer(serializers.ModelSerializer):
     id_entreprise = serializers.PrimaryKeyRelatedField(
@@ -26,20 +27,24 @@ class SignupSerializer(serializers.ModelSerializer):
             if role == 'ResponsableEntreprise':
                 validated_data.pop('zone_de_suivi', None)
                 user = ResponsableEntreprise.objects.create(**validated_data)
+                group = Group.objects.get(name='ResponsableEntreprise')
 
             elif role == 'ResponsableSuiviTMSA':
                 validated_data.pop('id_entreprise', None)
                 user = ResponsableSuiviTMSA.objects.create(**validated_data)
+                group = Group.objects.get(name='ResponsableSuiviTMSA')
 
             elif role == 'Admin':
                 validated_data.pop('zone_de_suivi', None)
                 validated_data.pop('id_entreprise', None)
                 user = Admin.objects.create(**validated_data)
+                group = Group.objects.get(name='Admin')
 
             else:
                 raise serializers.ValidationError("Rôle invalide")
 
             user.set_password(validated_data["password"])
+            user.groups.add(group)  # Assigne le groupe
             user.save()
             return user
 
@@ -66,10 +71,7 @@ class EntrepriseMereSerializer(serializers.ModelSerializer):
     class Meta:
         model = EntrepriseMere
         fields = '__all__'
-class EntrepriseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Entreprise
-        fields = '__all__'
+
 
 class PrefectureProvinceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -97,7 +99,7 @@ class SuiviIndicateurSerializer(serializers.ModelSerializer):
         fields = ['id_suivi_indicateur', 'engagement_indicateur', 'valeur_mesure', 'observations']
 
 class SuiviSerializer(serializers.ModelSerializer):
-    suivi_indicateurs = SuiviIndicateurSerializer(many=True, required=True, write_only=True)
+    suivi_indicateurs = SuiviIndicateurSerializer(many=True, required=True)
 
     class Meta:
         model = Suivi
@@ -115,42 +117,33 @@ class SuiviSerializer(serializers.ModelSerializer):
         return suivi
 
 class EngagementIndicateurSerializer(serializers.ModelSerializer):
-    entreprise = serializers.PrimaryKeyRelatedField(queryset=Entreprise.objects.all())
-    indicateur = serializers.PrimaryKeyRelatedField(queryset=Indicateur.objects.all())
-    engagement_aspect= serializers.PrimaryKeyRelatedField(queryset=EngagementAspect.objects.all())
-
-    aspects = serializers.SerializerMethodField()
+    id_indicateur = serializers.PrimaryKeyRelatedField(queryset=Indicateur.objects.all())
+    id_engagement_aspect= serializers.PrimaryKeyRelatedField(queryset=EngagementAspect.objects.all())
 
     class Meta:
         model = EngagementIndicateur
-        fields = ['id_engagement_indicateur', 'engagement_aspect','entreprise', 'indicateur', 'aspects']
+        fields = ['id_engagement_indicateur', 'id_engagement_aspect','id_indicateur']
 
-    def get_aspects(self, obj):
-        aspects = obj.aspects.all()
-        return EngagementAspectSerializer(aspects, many=True).data
+    def create(self, validated_data):
+        try:
+            return EngagementIndicateur.objects.create(**validated_data)
+        except IntegrityError:
+            raise serializers.ValidationError("Cet indicateur est déjà associé à cet engagement aspect.")
 class EngagementAspectSerializer(serializers.ModelSerializer):
+    id_entreprise = serializers.PrimaryKeyRelatedField(queryset=Entreprise.objects.all())
     echeances = serializers.SerializerMethodField()
+    engagements_indicateurs = EngagementIndicateurSerializer(many=True, read_only=True)
+    suivis = SuiviSerializer(many=True, read_only=True)
 
     class Meta:
         model = EngagementAspect
-        fields = ['id_engagement_aspect', 'lieu_prelevement',
-                  'methode_equipement', 'frequence', 'responsabilite', 'date_creation', 'echeances']
+        fields = ['id_engagement_aspect','id_entreprise', 'lieu_prelevement',
+                  'methode_equipement', 'frequence', 'responsabilite', 'date_creation', 'echeances','engagements_indicateurs','suivis']
 
     def get_echeances(self, obj):
         echeances = obj.echeances.all()
         return EcheanceSerializer(echeances, many=True).data
-    def validate(self, data):
-        """
-        Validation pour empêcher la création de plusieurs engagements
-        pour un même indicateur pour la même entreprise.
-        """
-        entreprise = data.get('id_entreprise')
-        indicateur = data.get('id_indicateur')
-
-        # Vérifie si un engagement similaire existe
-        if EngagementIndicateur.objects.filter(id_entreprise=entreprise, id_indicateur=indicateur).exists():
-            raise serializers.ValidationError("Cet indicateur est déjà associé à cette entreprise.")
-        return data
+   
 
 
 class IndicateurSerializer(serializers.ModelSerializer):
@@ -165,3 +158,11 @@ class AspectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Aspect
         fields = '__all__'
+class EntrepriseSerializer(serializers.ModelSerializer):
+    engagements_aspects = EngagementAspectSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Entreprise
+        fields = ['id_entreprise', 'id_entreprise_mere', 'id_commune', 'nom', 'adresse', 'zone', 
+                  'montant_investissement', 'nombre_emploi', 'superficie_totale', 
+                  'secteur_dominant', 'prefecture_province', 'DAE', 'EIE_PSSE', 'engagements_aspects']
