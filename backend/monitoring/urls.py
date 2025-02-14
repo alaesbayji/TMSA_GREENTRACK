@@ -29,9 +29,14 @@ urlpatterns = [
     
     path('engagement-aspect/', views.EngagementAspectCreateView.as_view(), name='engagement-aspect-create'),
     path('engagement-aspect/<int:pk>/', views.EngagementAspectRetrieveUpdateDeleteView.as_view(), name='engagement-aspect-detail'),
+
     path('engagement-indicateur/<int:pk>/', views.EngagementIndicateurRetrieveUpdateDeleteView.as_view(), name='engagement-indicateur-detail'),
+
     path('suivi/', views.SuiviListCreateView.as_view(), name='suivi-list-create'),
     path('suivi/<int:pk>/', views.SuiviRetrieveUpdateDeleteView.as_view(), name='suivi-detail'),  
+
+    path('suivi-indicateurs/<int:pk>/', views.SuiviIndicateurRetrieveUpdateDeleteView.as_view(), name='suivi-indicateur-detail'),
+
 
     path('entreprises/', views.EntrepriseAPIView.as_view(), name='entreprises-list'),
     

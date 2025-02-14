@@ -185,27 +185,32 @@ class SuiviListCreateView(generics.ListCreateAPIView):
         if not id_engagement_aspect:
             return Response({"error": "EngagementAspect est obligatoire."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Vérifier que tous les EngagementIndicateur sont renseignés
+        # Vérification de tous les indicateurs attendus
         engagement_indicateurs_attendus = EngagementIndicateur.objects.filter(
             id_engagement_aspect_id=id_engagement_aspect
         ).values_list('id_engagement_indicateur', flat=True)
 
-        engagement_indicateurs_reçus = [item['engagement_indicateur'] for item in suivi_indicateurs_data]
+        engagement_indicateurs_reçus = {item['engagement_indicateur'] for item in suivi_indicateurs_data}
+        indicateurs_manquants = set(engagement_indicateurs_attendus) - engagement_indicateurs_reçus
 
-        indicateurs_manquants = set(engagement_indicateurs_attendus) - set(engagement_indicateurs_reçus)
         if indicateurs_manquants:
             return Response(
-                {"error": f"Les EngagementIndicateurs suivants sont manquants de SuiviIndicateurs: {list(indicateurs_manquants)}"},
+                {"error": f"Les EngagementIndicateurs suivants sont manquants: {list(indicateurs_manquants)}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Créer le Suivi et les SuiviIndicateur
-        serializer = SuiviSerializer(data=data)
+        # Création de l'instance principale
+        serializer = self.get_serializer(data=data)
         if serializer.is_valid():
-            serializer.save()
+            suivi_instance = serializer.save()
+
+            # Création des SuiviIndicateurs associés
+            for indicateur_data in suivi_indicateurs_data:
+                SuiviIndicateur.objects.create(suivi=suivi_instance, **indicateur_data)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class SuiviRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
     queryset = Suivi.objects.all()
@@ -214,16 +219,62 @@ class SuiviRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        # Empêcher la modification si le Suivi est déjà clôturé
-        if instance.cloturer:
-            return Response({"error": "Ce suivi est déjà clôturé et ne peut plus être modifié."}, status=status.HTTP_400_BAD_REQUEST)
+        # Mise à jour des champs simples, sauf clôture
+        cloture_demande = request.data.get("cloturer", False)
+        request_data = request.data.copy()
+        request_data.pop("cloturer", None)  # On retire temporairement la clôture
 
-        # Passer la requête au sérialiseur pour la mise à jour
+        serializer = self.get_serializer(instance, data=request_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # Mise à jour ou création des suivi_indicateurs
+        suivi_indicateurs_data = request.data.get("suivi_indicateurs", [])
+        for ind_data in suivi_indicateurs_data:
+            engagement_id = ind_data.get("engagement_indicateur")
+            valeur_mesure = ind_data.get("valeur_mesure")
+            observations = ind_data.get("observations")
+
+            # Récupérer ou créer l'indicateur
+            suivi_ind, created = SuiviIndicateur.objects.get_or_create(
+                suivi=instance,
+                engagement_indicateur_id=engagement_id,
+                defaults={
+                    "valeur_mesure": valeur_mesure,
+                    "observations": observations
+                }
+            )
+            if not created:
+                # Mettre à jour si l'indicateur existe déjà
+                suivi_ind.valeur_mesure = valeur_mesure
+                suivi_ind.observations = observations
+                suivi_ind.save()
+
+                # Passer la requête au sérialiseur pour la mise à jour
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
         return Response(serializer.data)
+
+class SuiviIndicateurRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [AllowAny]
+    queryset = SuiviIndicateur.objects.all()
+    serializer_class = SuiviIndicateurSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Empêcher la modification si le Suivi est clôturé
+        if instance.suivi.cloturer:
+            return Response({"error": "Le suivi associé est clôturé. Modification impossible."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
+
 class EntrepriseAPIView(generics.ListAPIView):
     permission_classes = [AllowAny]
     queryset = Entreprise.objects.prefetch_related(
