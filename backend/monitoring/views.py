@@ -275,6 +275,16 @@ class SuiviIndicateurRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIV
 
         return Response(serializer.data)
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Empêcher la suppression si le Suivi est clôturé
+        if instance.suivi.cloturer:
+            return Response({"error": "Le suivi associé est clôturé. Suppression impossible."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super().destroy(request, *args, **kwargs)
+
+
 class EntrepriseAPIView(generics.ListAPIView):
     permission_classes = [AllowAny]
     queryset = Entreprise.objects.prefetch_related(
