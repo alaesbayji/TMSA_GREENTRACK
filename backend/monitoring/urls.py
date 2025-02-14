@@ -26,16 +26,12 @@ urlpatterns = [
     path('commune/<int:pk>/', views.CommuneRetrieveUpdateDeleteView.as_view(), name='commune-detail'),
 
     path('engagement-Indicateur/', views.EngagementCreateView.as_view(), name='create_engagement'),
-    path('engagement-Indicateur/<int:pk>/', views.EngagementIndicateurRetrieveUpdateDeleteView.as_view(), name='engagement-detail'),
-
-    path('engagement-Aspect/', views.EngagementAspectCreateView.as_view(), name='create_engagement'),
-    path('engagement-Aspect/<int:pk>/', views.EngagementAspectRetrieveUpdateDeleteView.as_view(), name='engagement-detail'),
     
+    path('engagement-aspect/', views.EngagementAspectCreateView.as_view(), name='engagement-aspect-create'),
+    path('engagement-aspect/<int:pk>/', views.EngagementAspectRetrieveUpdateDeleteView.as_view(), name='engagement-aspect-detail'),
+    path('engagement-indicateur/<int:pk>/', views.EngagementIndicateurRetrieveUpdateDeleteView.as_view(), name='engagement-indicateur-detail'),
     path('suivi/', views.SuiviListCreateView.as_view(), name='suivi-list-create'),
-    path('suivi/<int:pk>/', views.SuiviRetrieveUpdateDeleteView.as_view(), name='suivi-detail'),
-
-    path('echeances/entreprise/<int:id_entreprise>/', views.EcheanceByEntrepriseView.as_view(), name='echeance-by-entreprise'),
-    path('echeances/', views.EcheanceListView.as_view(), name='echeance-list'),
+    path('suivi/<int:pk>/', views.SuiviRetrieveUpdateDeleteView.as_view(), name='suivi-detail'),  
 
     path('entreprises/', views.EntrepriseAPIView.as_view(), name='entreprises-list'),
     

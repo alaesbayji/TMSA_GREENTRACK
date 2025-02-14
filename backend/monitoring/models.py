@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import BaseUserManager
@@ -94,23 +95,49 @@ class Indicateur(models.Model):
     seuil_max = models.FloatField()
     unite = models.CharField(max_length=100)
 
-
-
 class EngagementAspect(models.Model):
-    # ajouter entreprise
     id_engagement_aspect = models.AutoField(primary_key=True)
-    id_entreprise = models.ForeignKey(Entreprise, on_delete=models.CASCADE, related_name='engagements_aspects',null=True, blank=True,)
+    id_entreprise = models.ForeignKey('Entreprise', on_delete=models.CASCADE, related_name='engagements_aspects', null=True, blank=True)
+    id_aspect = models.ForeignKey('Aspect', on_delete=models.CASCADE, null=True, blank=True)
     lieu_prelevement = models.CharField(max_length=255)
     methode_equipement = models.CharField(max_length=255)
     frequence = models.IntegerField()
     responsabilite = models.CharField(max_length=255)
-    date_creation = models.DateField()  # Champ manuel pour saisir la date
+    date_creation = models.DateField()
+    date_prochaine_echeance = models.DateField(null=True, blank=True)
 
-   
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['id_aspect'],
+                name='unique_engagement_aspect_aspect'
+            )
+        ]
+
+    def generer_prochaine_echeance(self):
+        """Génère la prochaine échéance et crée un suivi"""
+        self.date_prochaine_echeance = self.calculer_prochaine_date()
+        self.save()
+
+        if self.date_prochaine_echeance:
+            Suivi.objects.create(
+                id_engagement_aspect=self,
+                date_limite=self.date_prochaine_echeance,
+                statut="en attente"
+            )
+
+    def calculer_prochaine_date(self):
+        """Calculer la date en fonction de la fréquence"""
+        if self.frequence > 0:
+            return self.date_creation + relativedelta(months=(12 // self.frequence))
+        return None
+
+
 class EngagementIndicateur(models.Model):
     id_engagement_indicateur = models.AutoField(primary_key=True)
-    id_indicateur = models.ForeignKey(Indicateur, on_delete=models.CASCADE)
-    id_engagement_aspect = models.ForeignKey(EngagementAspect, on_delete=models.CASCADE, null=True, blank=True,related_name='engagements_indicateurs')
+    id_indicateur = models.ForeignKey('Indicateur', on_delete=models.CASCADE)
+    id_engagement_aspect = models.ForeignKey(EngagementAspect, on_delete=models.CASCADE, null=True, blank=True, related_name='engagements_indicateurs')
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -119,31 +146,40 @@ class EngagementIndicateur(models.Model):
             )
         ]
 
-class Echeance(models.Model):
-    id_echeance = models.AutoField(primary_key=True)
-    id_engagement_aspect = models.ForeignKey(EngagementAspect, on_delete=models.CASCADE, null=True, blank=True,related_name='echeances')
-    date_limite = models.DateField()
-    statut = models.CharField(max_length=50, choices=[('en attente', 'En attente'), ('effectuee', 'Effectuée')], default='en attente')
-
-   
-
 class Suivi(models.Model):
+    STATUT_CHOICES = [
+        ('en attente', 'En attente'),
+        ('effectué', 'Effectué'),
+        ('effectué_Retard', 'Effectué_Retard'),
+    ]
+
     id_suivi = models.AutoField(primary_key=True)
-    id_engagement_aspect = models.ForeignKey('EngagementAspect', on_delete=models.CASCADE, related_name='suivis')
-    date_mesure = models.DateField()
+    id_engagement_aspect = models.ForeignKey(EngagementAspect, on_delete=models.CASCADE, related_name='suivis')
+    date_mesure = models.DateField(null=True, blank=True)
+    date_limite = models.DateField(null=True, blank=True)
     justificatif_etude = models.FileField(upload_to='justificatifs/', null=True, blank=True)
-    echeance = models.OneToOneField('Echeance', on_delete=models.CASCADE, null=True, blank=True, related_name='suivi_associe')
+    statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='en attente')
+    cloturer = models.BooleanField(default=False)  # Nouveau champ
 
-    def __str__(self):
-        return f"Suivi {self.id_suivi} - Mesure le {self.date_mesure}"
-
+    def mettre_a_jour_statut(self):
+        if self.date_mesure:
+            if self.date_mesure <= self.date_limite:
+                self.statut = "effectué"
+            else:
+                self.statut = "effectué_Retard"
+            self.save()
 
 class SuiviIndicateur(models.Model):
     id_suivi_indicateur = models.AutoField(primary_key=True)
     suivi = models.ForeignKey(Suivi, on_delete=models.CASCADE, related_name='suivi_indicateurs')
-    engagement_indicateur = models.ForeignKey('EngagementIndicateur', on_delete=models.CASCADE)
+    engagement_indicateur = models.ForeignKey(EngagementIndicateur, on_delete=models.CASCADE)
     valeur_mesure = models.FloatField()
     observations = models.TextField(null=True, blank=True)
 
-    def __str__(self):
-        return f"Suivi Indicateur {self.id_suivi_indicateur} - {self.engagement_indicateur.id_indicateur}"
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['suivi', 'engagement_indicateur'],
+                name='unique_suivi_engagement_indicateur'
+            )
+        ]

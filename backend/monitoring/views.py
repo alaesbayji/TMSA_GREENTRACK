@@ -3,14 +3,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import EntrepriseMere, Entreprise, Aspect, Indicateur, Utilisateur,PrefectureProvince,Commune,EngagementIndicateur,Suivi,SuiviIndicateur,Echeance,EngagementAspect
+from .models import EntrepriseMere, Entreprise, Aspect, Indicateur, Utilisateur,PrefectureProvince,Commune,EngagementIndicateur,Suivi,SuiviIndicateur,EngagementAspect
 from .serializers import (
     EntrepriseMereSerializer, 
     EntrepriseSerializer, 
     AspectSerializer, 
     IndicateurSerializer,
     SignupSerializer,
-    LoginSerializer,PrefectureProvinceSerializer,CommuneSerializer,EngagementIndicateurSerializer,SuiviSerializer,EcheanceSerializer,EngagementAspectSerializer
+    LoginSerializer,PrefectureProvinceSerializer,CommuneSerializer,EngagementIndicateurSerializer,SuiviSerializer,EngagementAspectSerializer,SuiviIndicateurSerializer
 )
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
@@ -141,6 +141,8 @@ class EngagementCreateView(generics.CreateAPIView):
     queryset = EngagementIndicateur.objects.all()
     serializer_class = EngagementIndicateurSerializer
 
+from dateutil.relativedelta import relativedelta
+
 class EngagementAspectCreateView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     queryset = EngagementAspect.objects.all()
@@ -148,52 +150,48 @@ class EngagementAspectCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         engagement = serializer.save()
-        date_creation = engagement.date_creation
-        frequence = engagement.frequence
-        
-        # Vérification que la fréquence est valide
-        if frequence <= 0:
-            raise ValueError("La fréquence doit être supérieure à zéro.")
 
-        intervalle_mois = 12 // frequence
-        date_debut = date_creation + relativedelta(months=intervalle_mois)  # Première échéance après intervalle
+        if engagement.frequence <= 0:
+            raise serializers.ValidationError({"frequence": "La fréquence doit être supérieure à zéro."})
 
-        for i in range(frequence):
-            date_echeance = date_debut + relativedelta(months=(i * intervalle_mois))
-            Echeance.objects.create(
-                id_engagement_aspect=engagement,
-                date_limite=date_echeance,
-                statut='en attente'
-            )
+        engagement.generer_prochaine_echeance()
+
 class EngagementAspectRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
     queryset = EngagementAspect.objects.all()
     serializer_class = EngagementAspectSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        response = super().update(request, *args, **kwargs)
+        instance.generer_prochaine_echeance()
+        return response
+
 class EngagementIndicateurRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
     queryset = EngagementIndicateur.objects.all()
     serializer_class = EngagementIndicateurSerializer
+
 class SuiviListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
+    queryset = Suivi.objects.all()
+    serializer_class = SuiviSerializer
 
     def post(self, request, *args, **kwargs):
         data = request.data
         id_engagement_aspect = data.get('id_engagement_aspect')
-        echeance_id = data.get('echeance')
         suivi_indicateurs_data = data.get('suivi_indicateurs', [])
 
-        if not id_engagement_aspect or not echeance_id:
-            return Response({"error": "EngagementAspect et Echeance sont obligatoires."}, status=status.HTTP_400_BAD_REQUEST)
+        if not id_engagement_aspect:
+            return Response({"error": "EngagementAspect est obligatoire."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Vérifiez les EngagementIndicateurs associés à cet EngagementAspect
+        # Vérifier que tous les EngagementIndicateur sont renseignés
         engagement_indicateurs_attendus = EngagementIndicateur.objects.filter(
             id_engagement_aspect_id=id_engagement_aspect
         ).values_list('id_engagement_indicateur', flat=True)
 
-        # Liste des EngagementIndicateurs dans la requête
         engagement_indicateurs_reçus = [item['engagement_indicateur'] for item in suivi_indicateurs_data]
 
-        # Vérifiez si tous les EngagementIndicateurs attendus sont présents
         indicateurs_manquants = set(engagement_indicateurs_attendus) - set(engagement_indicateurs_reçus)
         if indicateurs_manquants:
             return Response(
@@ -201,49 +199,31 @@ class SuiviListCreateView(generics.ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Sauvegarde si validation réussie
+        # Créer le Suivi et les SuiviIndicateur
         serializer = SuiviSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-
-            # Mise à jour de l'échéance si présente
-            echeance = serializer.instance.echeance
-            if echeance:
-                echeance.statut = 'effectuee'
-                echeance.save()
-
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class SuiviRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
     queryset = Suivi.objects.all()
     serializer_class = SuiviSerializer
 
-class EcheanceUpdateView(APIView):
-    def post(self, request, id_echeance):
-        try:
-            echeance = Echeance.objects.get(id_echeance=id_echeance)
-            echeance.statut = 'effectuee'
-            echeance.save()
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
 
-            return Response({"message": "Echéance mise à jour"}, status=status.HTTP_200_OK)
-        except Echeance.DoesNotExist:
-            return Response({"error": "Echéance introuvable"}, status=status.HTTP_404_NOT_FOUND)
-class EcheanceListView(generics.ListAPIView):
-    permission_classes = [AllowAny]
-    queryset = Echeance.objects.all()
-    serializer_class = EcheanceSerializer
-class EcheanceByEntrepriseView(generics.ListAPIView):
-    permission_classes = [AllowAny]
-    serializer_class = EcheanceSerializer
+        # Empêcher la modification si le Suivi est déjà clôturé
+        if instance.cloturer:
+            return Response({"error": "Ce suivi est déjà clôturé et ne peut plus être modifié."}, status=status.HTTP_400_BAD_REQUEST)
 
-    def get_queryset(self):
-        id_entreprise = self.kwargs['id_entreprise']
-        return Echeance.objects.filter(engagement__id_entreprise=id_entreprise)
+        # Passer la requête au sérialiseur pour la mise à jour
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
 
+        return Response(serializer.data)
 class EntrepriseAPIView(generics.ListAPIView):
     permission_classes = [AllowAny]
     queryset = Entreprise.objects.prefetch_related(
