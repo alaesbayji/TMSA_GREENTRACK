@@ -3,14 +3,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import EntrepriseMere, Entreprise, Aspect, Indicateur, Utilisateur,PrefectureProvince,Commune,EngagementIndicateur,Suivi,SuiviIndicateur,EngagementAspect
+from .models import    ( EngagementIndicateurSousAspect,  SecteurActivite,ActiviteIndustrielle,SousAspectEau,IndicateurEauPollution,
+    EngagementSousAspectEauPollution,  
+    SuiviSousAspect,  
+    SuiviIndicateurSousAspect  ,EntrepriseMere, Entreprise, Aspect, Indicateur, Utilisateur,PrefectureProvince,Commune,EngagementIndicateur,Suivi,SuiviIndicateur,EngagementAspect)
 from .serializers import (
     EntrepriseMereSerializer, 
     EntrepriseSerializer, 
     AspectSerializer, 
     IndicateurSerializer,
     SignupSerializer,
-    LoginSerializer,PrefectureProvinceSerializer,CommuneSerializer,EngagementIndicateurSerializer,SuiviSerializer,EngagementAspectSerializer,SuiviIndicateurSerializer
+    LoginSerializer,PrefectureProvinceSerializer,CommuneSerializer,EngagementIndicateurSerializer,SuiviSerializer,EngagementAspectSerializer,SuiviIndicateurSerializer,EngagementIndicateurSousAspectSerializer,  
+    EngagementSousAspectEauPollutionSerializer,  
+    SuiviSousAspectSerializer,  
+    SuiviIndicateurSousAspectSerializer  ,SecteurActiviteSerializer,ActiviteIndustrielleSerializer,SousAspectEauPollutionSerializer,IndicateurEauPollutionSerializer
 )
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
@@ -104,8 +110,45 @@ class AspectRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
     queryset = Aspect.objects.all()
     serializer_class = AspectSerializer
+class SecteurListCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    queryset = SecteurActivite.objects.all()
+    serializer_class = SecteurActiviteSerializer
 
 
+class SecteurRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [AllowAny]
+    queryset = SecteurActivite.objects.all()
+    serializer_class = SecteurActiviteSerializer
+class ActiviteIndusListCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    queryset = ActiviteIndustrielle.objects.all()
+    serializer_class = ActiviteIndustrielleSerializer
+
+
+class ActiviteIndusRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [AllowAny]
+    queryset = ActiviteIndustrielle.objects.all()
+    serializer_class = ActiviteIndustrielleSerializer
+class IndicateurEauPollutionListCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    queryset = IndicateurEauPollution.objects.all()
+    serializer_class = IndicateurEauPollutionSerializer
+
+
+class IndicateurEauPollutionRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [AllowAny]
+    queryset = IndicateurEauPollution.objects.all()
+    serializer_class = IndicateurEauPollutionSerializer
+class SousAspectEauPollutionListCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    queryset = SousAspectEau.objects.all()
+    serializer_class = SousAspectEauPollutionSerializer
+
+class SousAspectEauPollutionRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [AllowAny]
+    queryset = SousAspectEau.objects.all()
+    serializer_class = SousAspectEauPollutionSerializer
 # Indicateur Views
 class IndicateurListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
@@ -150,10 +193,13 @@ class EngagementAspectCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         engagement = serializer.save()
+        aspect = serializer.validated_data.get('id_aspect')
+        sous_aspect = serializer.validated_data.get('id_sous_aspect_eau')
 
         if engagement.frequence <= 0:
             raise serializers.ValidationError({"frequence": "La fréquence doit être supérieure à zéro."})
-
+        elif aspect.est_eau and sous_aspect.est_pollution:
+            raise serializers.ValidationError("Pour l'aspect Eu, utilisez EngagementSousAspectEauPollutionCreateView.")
         engagement.generer_prochaine_echeance()
 
 class EngagementAspectRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
@@ -293,3 +339,159 @@ class EntrepriseAPIView(generics.ListAPIView):
         'engagements_aspects__echeances'
     ).all()
     serializer_class = EntrepriseSerializer
+class EngagementIndicateurSousAspectCreateView(generics.CreateAPIView):  
+    permission_classes = [AllowAny]  
+    queryset = EngagementIndicateurSousAspect.objects.all()  
+    serializer_class = EngagementIndicateurSousAspectSerializer  
+
+class EngagementSousAspectEauPollutionCreateView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
+    queryset = EngagementSousAspectEauPollution.objects.all()
+    serializer_class = EngagementSousAspectEauPollutionSerializer
+
+    def perform_create(self, serializer):
+        engagement = serializer.save()
+
+        if engagement.frequence <= 0:
+            raise serializers.ValidationError({"frequence": "La fréquence doit être supérieure à zéro."})
+
+        engagement.generer_prochaine_echeance()
+
+class EngagementSousAspectRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):  
+    permission_classes = [AllowAny]  
+    queryset = EngagementSousAspectEauPollution.objects.all()  
+    serializer_class = EngagementSousAspectEauPollutionSerializer  
+
+    def update(self, request, *args, **kwargs):  
+        instance = self.get_object()  
+        response = super().update(request, *args, **kwargs)  
+        instance.generer_prochaine_echeance()  # Regénérer la prochaine échéance après mise à jour  
+        return response  
+
+class SuiviSousAspectListCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    queryset = SuiviSousAspect.objects.all()
+    serializer_class = SuiviSousAspectSerializer
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        id_engagement_sous_aspect = data.get('id_engagement_sous_aspect')
+        suivi_indicateurs_data = data.get('suivi_indicateurs_sous_aspect', [])
+
+        if not id_engagement_sous_aspect:
+            return Response({"error": "EngagementSousAspect est obligatoire."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérification de tous les indicateurs attendus
+        engagement_indicateurs_attendus = EngagementIndicateurSousAspect.objects.filter(
+            id_engagement_sous_aspect_id=id_engagement_sous_aspect
+        ).values_list('id', flat=True)
+
+        engagement_indicateurs_reçus = {item['engagement_indicateur_sous_aspect'] for item in suivi_indicateurs_data}
+        indicateurs_manquants = set(engagement_indicateurs_attendus) - engagement_indicateurs_reçus
+
+        if indicateurs_manquants:
+            return Response(
+                {"non_field_errors": [f"Les EngagementIndicateursSousAspect suivants sont manquants de SuiviIndicateursSousAspect: {list(indicateurs_manquants)}"]},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Création de l'instance principale
+        serializer = self.get_serializer(data=data)
+        if serializer.is_valid():
+            suivi_instance = serializer.save()
+
+            # Création des SuiviIndicateurSousAspect associés
+            for indicateur_data in suivi_indicateurs_data:
+                SuiviIndicateurSousAspect.objects.create(
+                    suivi=suivi_instance,
+                    engagement_indicateur_sous_aspect_id=indicateur_data['engagement_indicateur_sous_aspect'],
+                    valeur_mesure=indicateur_data.get('valeur_mesure'),
+                    observations=indicateur_data.get('observations')
+                )
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SuiviSousAspectRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [AllowAny]
+    queryset = SuiviSousAspect.objects.all()
+    serializer_class = SuiviSousAspectSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Empêcher la modification si le Suivi est déjà clôturé
+        if instance.cloturer:
+            return Response({"error": "Ce suivi est déjà clôturé et ne peut plus être modifié."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Mise à jour des champs simples, sauf clôture
+        cloture_demande = request.data.get("cloturer", False)
+        request_data = request.data.copy()
+        request_data.pop("cloturer", None)  # On retire temporairement la clôture
+
+        serializer = self.get_serializer(instance, data=request_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # Mise à jour ou création des SuiviIndicateurSousAspect
+        suivi_indicateurs_data = request.data.get("suivi_indicateurs_sous_aspect", [])
+        for ind_data in suivi_indicateurs_data:
+            engagement_id = ind_data.get("engagement_indicateur_sous_aspect")
+            valeur_mesure = ind_data.get("valeur_mesure")
+            observations = ind_data.get("observations")
+
+            # Récupérer ou créer l'indicateur
+            suivi_ind, created = SuiviIndicateurSousAspect.objects.get_or_create(
+                suivi=instance,
+                engagement_indicateur_sous_aspect_id=engagement_id,
+                defaults={
+                    "valeur_mesure": valeur_mesure,
+                    "observations": observations
+                }
+            )
+            if not created:
+                # Mettre à jour si l'indicateur existe déjà
+                suivi_ind.valeur_mesure = valeur_mesure
+                suivi_ind.observations = observations
+                suivi_ind.save()
+
+        # Si le champ 'cloturer' est passé à True, clôturer le Suivi
+        if cloture_demande:
+            instance.cloturer = True
+            instance.date_mesure = timezone.now().date()  # Date actuelle
+            instance.mettre_a_jour_statut()  # Mettre à jour le statut
+            instance.save()
+
+            # Générer une nouvelle échéance et créer un nouveau Suivi
+            engagement_sous_aspect = instance.id_engagement_sous_aspect
+            engagement_sous_aspect.generer_prochaine_echeance()
+
+        return Response(serializer.data)
+
+class SuiviIndicateurSousAspectRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [AllowAny]
+    queryset = SuiviIndicateurSousAspect.objects.all()
+    serializer_class = SuiviIndicateurSousAspectSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Empêcher la modification si le Suivi est clôturé
+        if instance.suivi.cloturer:
+            return Response({"error": "Le suivi associé est clôturé. Modification impossible."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Empêcher la suppression si le Suivi est clôturé
+        if instance.suivi.cloturer:
+            return Response({"error": "Le suivi associé est clôturé. Suppression impossible."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super().destroy(request, *args, **kwargs)
