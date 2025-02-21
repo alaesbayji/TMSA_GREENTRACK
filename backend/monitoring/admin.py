@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import Utilisateur, ResponsableEntreprise, ResponsableSuiviTMSA, Admin
-
+from .models.user_models import Utilisateur, ResponsableEntreprise, ResponsableSuiviTMSA, Admin
 @admin.register(Utilisateur)
 class UtilisateurAdmin(admin.ModelAdmin):
     list_display = ['nom', 'prenom', 'email', 'is_active']

@@ -1,0 +1,9 @@
+/* MapComponent.css */  
+.map-container {  
+    display: flex; /* Aligner les éléments horizontalement */  
+}  
+
+.map-section {  
+    flex: 1; /* Prendre le reste de l'espace */  
+    padding: 20px; /* Ajoutez un espacement autour de la carte */  
+}

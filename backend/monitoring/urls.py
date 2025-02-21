@@ -1,64 +1,72 @@
 from django.urls import path  
 from rest_framework_simplejwt.views import TokenRefreshView  
 from . import views  
-
+from .views.auth_views import( LoginView,SignupView,TestTokenView)
+from .views.enterprise_views import (EntrepriseMereListCreateView,EntrepriseMereRetrieveUpdateDeleteView,EntrepriseListCreateView,EntrepriseRetrieveUpdateDeleteView,
+ActiviteIndusListCreateView,ActiviteIndusRetrieveUpdateDeleteView,SecteurListCreateView,SecteurRetrieveUpdateDeleteView)
+from .views.aspect_views import (AspectListCreateView,AspectRetrieveUpdateDeleteView,IndicateurListCreateView,IndicateurRetrieveUpdateDeleteView,IndicateurEauPollutionListCreateView,IndicateurEauPollutionRetrieveUpdateDeleteView,
+SousAspectEauPollutionListCreateView,SousAspectEauPollutionRetrieveUpdateDeleteView)
+from .views.suivi_views import( EngagementCreateView,EngagementAspectCreateView,EngagementAspectRetrieveUpdateDeleteView,EngagementIndicateurRetrieveUpdateDeleteView,SuiviListCreateView,SuiviRetrieveUpdateDeleteView,
+SuiviIndicateurRetrieveUpdateDeleteView,EngagementIndicateurSousAspectCreateView,EngagementSousAspectEauPollutionCreateView,EngagementSousAspectRetrieveUpdateDeleteView,SuiviSousAspectListCreateView,SuiviSousAspectRetrieveUpdateDeleteView,
+SuiviIndicateurSousAspectRetrieveUpdateDeleteView)
+from .views.map_views import CommuneListCreateView ,CommuneRetrieveUpdateDeleteView,ProvinceListCreateView,ProvinceRetrieveUpdateDeleteView
 urlpatterns = [  
     # Authentification  
-    path('login/', views.LoginView.as_view(), name='login'),  
-    path('signup/', views.SignupView.as_view(), name='signup'),  
-    path('token/verify/', views.TestTokenView.as_view(), name='token_verify'),  
+    path('login/', LoginView.as_view(), name='login'),  
+    path('signup/', SignupView.as_view(), name='signup'),  
+    path('token/verify/', TestTokenView.as_view(), name='token_verify'),  
 
     # Entreprises Mère  
-    path('entreprise-mere/', views.EntrepriseMereListCreateView.as_view(), name='entreprise-mere-list-create'),  
-    path('entreprise-mere/<int:pk>/', views.EntrepriseMereRetrieveUpdateDeleteView.as_view(), name='entreprise-mere-detail'),  
+    path('entreprise-mere/',EntrepriseMereListCreateView.as_view(), name='entreprise-mere-list-create'),  
+    path('entreprise-mere/<int:pk>/', EntrepriseMereRetrieveUpdateDeleteView.as_view(), name='entreprise-mere-detail'),  
 
     # Entreprises  
-    path('entreprise/', views.EntrepriseListCreateView.as_view(), name='entreprise-list-create'),  
-    path('entreprise/<int:pk>/', views.EntrepriseRetrieveUpdateDeleteView.as_view(), name='entreprise-detail'),  
+    path('entreprise/', EntrepriseListCreateView.as_view(), name='entreprise-list-create'),  
+    path('entreprise/<int:pk>/', EntrepriseRetrieveUpdateDeleteView.as_view(), name='entreprise-detail'),  
 
     # Activités  
-    path('activites-industrielles/', views.ActiviteIndusListCreateView.as_view(), name='activite-industrielle-list-create'),  
-    path('activites-industrielles/<int:pk>/', views.ActiviteIndusRetrieveUpdateDeleteView.as_view(), name='activite-industrielle-detail'),  
+    path('activites-industrielles/', ActiviteIndusListCreateView.as_view(), name='activite-industrielle-list-create'),  
+    path('activites-industrielles/<int:pk>/', ActiviteIndusRetrieveUpdateDeleteView.as_view(), name='activite-industrielle-detail'),  
 
     # Aspects  
-    path('aspect/', views.AspectListCreateView.as_view(), name='aspect-list-create'),  
-    path('aspect/<int:pk>/', views.AspectRetrieveUpdateDeleteView.as_view(), name='aspect-detail'),  
+    path('aspect/', AspectListCreateView.as_view(), name='aspect-list-create'),  
+    path('aspect/<int:pk>/', AspectRetrieveUpdateDeleteView.as_view(), name='aspect-detail'),  
 
     # Engagements  
-    path('engagement-Indicateur/', views.EngagementCreateView.as_view(), name='create_engagement'),  
-    path('engagement-aspect/', views.EngagementAspectCreateView.as_view(), name='engagement-aspect-create'),  
-    path('engagement-aspect/<int:pk>/', views.EngagementAspectRetrieveUpdateDeleteView.as_view(), name='engagement-aspect-detail'),  
-    path('engagement-indicateur/<int:pk>/', views.EngagementIndicateurRetrieveUpdateDeleteView.as_view(), name='engagement-indicateur-detail'),  
-    path('engagements/sous-aspect/', views.EngagementSousAspectEauPollutionCreateView.as_view(), name='engagement-sous-aspect-create'),  
-    path('engagements/sous-aspect/<int:pk>/', views.EngagementSousAspectRetrieveUpdateDeleteView.as_view(), name='engagement-sous-aspect-detail'),  
-    path('indicateurs/sous-aspect/', views.EngagementIndicateurSousAspectCreateView.as_view(), name='engagement-indicateur-create'),  
+    path('engagement-Indicateur/', EngagementCreateView.as_view(), name='create_engagement'),  
+    path('engagement-aspect/', EngagementAspectCreateView.as_view(), name='engagement-aspect-create'),  
+    path('engagement-aspect/<int:pk>/', EngagementAspectRetrieveUpdateDeleteView.as_view(), name='engagement-aspect-detail'),  
+    path('engagement-indicateur/<int:pk>/', EngagementIndicateurRetrieveUpdateDeleteView.as_view(), name='engagement-indicateur-detail'),  
+    path('engagements/sous-aspect/', EngagementSousAspectEauPollutionCreateView.as_view(), name='engagement-sous-aspect-create'),  
+    path('engagements/sous-aspect/<int:pk>/', EngagementSousAspectRetrieveUpdateDeleteView.as_view(), name='engagement-sous-aspect-detail'),  
+    path('indicateurs/sous-aspect/', EngagementIndicateurSousAspectCreateView.as_view(), name='engagement-indicateur-create'),  
 
     # Indicateurs  
-    path('indicateur/', views.IndicateurListCreateView.as_view(), name='indicateur-list-create'),  
-    path('indicateur/<int:pk>/', views.IndicateurRetrieveUpdateDeleteView.as_view(), name='indicateur-detail'),  
-    path('indicateurs-eau-pollution/', views.IndicateurEauPollutionListCreateView.as_view(), name='indicateur-eau-pollution-list-create'),  
-    path('indicateurs-eau-pollution/<int:pk>/', views.IndicateurEauPollutionRetrieveUpdateDeleteView.as_view(), name='indicateur-eau-pollution-detail'),  
+    path('indicateur/', IndicateurListCreateView.as_view(), name='indicateur-list-create'),  
+    path('indicateur/<int:pk>/', IndicateurRetrieveUpdateDeleteView.as_view(), name='indicateur-detail'),  
+    path('indicateurs-eau-pollution/', IndicateurEauPollutionListCreateView.as_view(), name='indicateur-eau-pollution-list-create'),  
+    path('indicateurs-eau-pollution/<int:pk>/', IndicateurEauPollutionRetrieveUpdateDeleteView.as_view(), name='indicateur-eau-pollution-detail'),  
 
     # Provinces  
-    path('province/', views.ProvinceListCreateView.as_view(), name='province-list-create'),  
-    path('province/<int:pk>/', views.ProvinceRetrieveUpdateDeleteView.as_view(), name='province-detail'),  
+    path('province/', ProvinceListCreateView.as_view(), name='province-list-create'),  
+    path('province/<int:pk>/', ProvinceRetrieveUpdateDeleteView.as_view(), name='province-detail'),  
 
     # Communes  
-    path('commune/', views.CommuneListCreateView.as_view(), name='commune-list-create'),  
-    path('commune/<int:pk>/', views.CommuneRetrieveUpdateDeleteView.as_view(), name='commune-detail'),  
+    path('commune/', CommuneListCreateView.as_view(), name='commune-list-create'),  
+    path('commune/<int:pk>/', CommuneRetrieveUpdateDeleteView.as_view(), name='commune-detail'),  
 
     # Suivis  
-    path('suivi/', views.SuiviListCreateView.as_view(), name='suivi-list-create'),  
-    path('suivi/<int:pk>/', views.SuiviRetrieveUpdateDeleteView.as_view(), name='suivi-detail'),  
-    path('suivi-indicateurs/<int:pk>/', views.SuiviIndicateurRetrieveUpdateDeleteView.as_view(), name='suivi-indicateur-detail'),  
-    path('suivis/sous-aspect/', views.SuiviSousAspectListCreateView.as_view(), name='suivi-sous-aspect-list-create'),  
-    path('suivis/sous-aspect/<int:pk>/', views.SuiviSousAspectRetrieveUpdateDeleteView.as_view(), name='suivi-sous-aspect-detail'),  
+    path('suivi/', SuiviListCreateView.as_view(), name='suivi-list-create'),  
+    path('suivi/<int:pk>/', SuiviRetrieveUpdateDeleteView.as_view(), name='suivi-detail'),  
+    path('suivi-indicateurs/<int:pk>/', SuiviIndicateurRetrieveUpdateDeleteView.as_view(), name='suivi-indicateur-detail'),  
+    path('suivis/sous-aspect/',SuiviSousAspectListCreateView.as_view(), name='suivi-sous-aspect-list-create'),  
+    path('suivis/sous-aspect/<int:pk>/',SuiviSousAspectRetrieveUpdateDeleteView.as_view(), name='suivi-sous-aspect-detail'),  
 
     # Secteurs  
-    path('secteurs/', views.SecteurListCreateView.as_view(), name='secteur-list-create'),  
-    path('secteurs/<int:pk>/', views.SecteurRetrieveUpdateDeleteView.as_view(), name='secteur-detail'),  
+    path('secteurs/', SecteurListCreateView.as_view(), name='secteur-list-create'),  
+    path('secteurs/<int:pk>/', SecteurRetrieveUpdateDeleteView.as_view(), name='secteur-detail'),  
 
     # Sous Aspects  
-    path('sous-aspects-eau-pollution/', views.SousAspectEauPollutionListCreateView.as_view(), name='sous-aspect-eau-pollution-list-create'),  
-    path('sous-aspects-eau-pollution/<int:pk>/', views.SousAspectEauPollutionRetrieveUpdateDeleteView.as_view(), name='sous-aspect-eau-pollution-detail'),  
+    path('sous-aspects-eau-pollution/', SousAspectEauPollutionListCreateView.as_view(), name='sous-aspect-eau-pollution-list-create'),  
+    path('sous-aspects-eau-pollution/<int:pk>/', SousAspectEauPollutionRetrieveUpdateDeleteView.as_view(), name='sous-aspect-eau-pollution-detail'),  
 ]
