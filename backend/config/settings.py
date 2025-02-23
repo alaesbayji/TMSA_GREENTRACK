@@ -12,11 +12,15 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
+import os  
 
+# Assurez-vous que GDAL_LIBRARY_PATH est définie correctement  
+os.environ['GDAL_LIBRARY_PATH'] = '/usr/lib/libgdal.so'  # Adjustez ce chemin si nécessaire
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+# Définir le chemin de la bibliothèque GDAL  
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -38,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',  # Ajoutez cette ligne
     'monitoring.apps.MonitoringConfig', 
      'rest_framework',
     'rest_framework_simplejwt', # Ajoutez cette ligne
@@ -152,15 +157,15 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tmsa_greentrack',
-        'USER': 'postgres',
-        'PASSWORD': 'password',
-        'HOST': 'db',  # Doit correspondre au nom du service dans docker-compose
-        'PORT': '5432',
-    }
+DATABASES = {  
+    'default': {  
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',  
+        'NAME': os.environ.get('POSTGRES_DB', 'tmsa_greentrack'),  
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),  
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'password'),  
+        'HOST': os.environ.get('DB_HOST', 'db'),  
+        'PORT': os.environ.get('DB_PORT', '5432'),  
+    }  
 }
 # CORS pour le frontend
 INSTALLED_APPS += ['corsheaders']

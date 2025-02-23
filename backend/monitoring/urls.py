@@ -9,7 +9,7 @@ SousAspectEauPollutionListCreateView,SousAspectEauPollutionRetrieveUpdateDeleteV
 from .views.suivi_views import( EngagementCreateView,EngagementAspectCreateView,EngagementAspectRetrieveUpdateDeleteView,EngagementIndicateurRetrieveUpdateDeleteView,SuiviListCreateView,SuiviRetrieveUpdateDeleteView,
 SuiviIndicateurRetrieveUpdateDeleteView,EngagementIndicateurSousAspectCreateView,EngagementSousAspectEauPollutionCreateView,EngagementSousAspectRetrieveUpdateDeleteView,SuiviSousAspectListCreateView,SuiviSousAspectRetrieveUpdateDeleteView,
 SuiviIndicateurSousAspectRetrieveUpdateDeleteView)
-from .views.map_views import CommuneListCreateView ,CommuneRetrieveUpdateDeleteView,ProvinceListCreateView,ProvinceRetrieveUpdateDeleteView
+from .views.map_views import ImportShapefileView,CommuneListCreateView ,CommuneRetrieveUpdateDeleteView,ProvinceListCreateView,ProvinceRetrieveUpdateDeleteView,ParcelleListCreateView,ParcelleRetrieveUpdateDestroyView
 urlpatterns = [  
     # Authentification  
     path('login/', LoginView.as_view(), name='login'),  
@@ -69,4 +69,8 @@ urlpatterns = [
     # Sous Aspects  
     path('sous-aspects-eau-pollution/', SousAspectEauPollutionListCreateView.as_view(), name='sous-aspect-eau-pollution-list-create'),  
     path('sous-aspects-eau-pollution/<int:pk>/', SousAspectEauPollutionRetrieveUpdateDeleteView.as_view(), name='sous-aspect-eau-pollution-detail'),  
+    # URL pour Parcelles  
+    path('parcelles/', ParcelleListCreateView.as_view(), name='parcelle-list-create'),  
+    path('parcelles/<int:pk>/', ParcelleRetrieveUpdateDestroyView.as_view(), name='parcelle-detail'),  
+    path('import-shapefile/', ImportShapefileView.as_view(), name='import-shapefile'),  
 ]

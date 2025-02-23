@@ -46,7 +46,7 @@ class SignupSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Rôle invalide")
 
             user.set_password(validated_data["password"])
-            user.groups.add(group)  # Assigne le groupe
+            user.groups.add(group)  # Assigner le groupe correspondant
             user.save()
             return user
 

@@ -40,10 +40,28 @@ class LoginView(APIView):
             if not user:
                 return Response({"error": "Identifiants invalides"}, status=status.HTTP_401_UNAUTHORIZED)
 
+            # Déterminer le rôle en fonction des groupes de l'utilisateur
+            if user.groups.filter(name='Admin').exists():
+                role = 'Admin'
+            elif user.groups.filter(name='ResponsableEntreprise').exists():
+                role = 'ResponsableEntreprise'
+            elif user.groups.filter(name='ResponsableSuiviTMSA').exists():
+                role = 'ResponsableSuiviTMSA'
+            else:
+                role = 'Utilisateur'  # Rôle par défaut
+
+            # Générer les tokens JWT
             refresh = RefreshToken.for_user(user)
             return Response({
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
+                "user": {
+                    "idUtilisateur": user.idUtilisateur,
+                    "email": user.email,
+                    "nom": user.nom,
+                    "prenom": user.prenom,
+                    "role": role,  # Retourner le rôle déterminé
+                }
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -51,10 +69,23 @@ class TestTokenView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = request.user
+
+        # Déterminer le rôle en fonction des groupes de l'utilisateur
+        if user.groups.filter(name='Admin').exists():
+            role = 'Admin'
+        elif user.groups.filter(name='ResponsableEntreprise').exists():
+            role = 'ResponsableEntreprise'
+        elif user.groups.filter(name='ResponsableSuiviTMSA').exists():
+            role = 'ResponsableSuiviTMSA'
+        else:
+            role = 'Utilisateur'  # Rôle par défaut
+
         return Response({
             "message": "Token valide !",
             "user": {
-                "email": request.user.email,
-                "id": request.user.idUtilisateur
+                "email": user.email,
+                "id": user.idUtilisateur,
+                "role": role,  # Retourner le rôle déterminé
             }
         })

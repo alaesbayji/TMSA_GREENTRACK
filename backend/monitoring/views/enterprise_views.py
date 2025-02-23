@@ -5,7 +5,7 @@ from ..models.enterprise_models import EntrepriseMere, Entreprise,SecteurActivit
 from ..serializers.enterprise_serializers import EntrepriseMereSerializer, EntrepriseSerializer,SecteurActiviteSerializer, ActiviteIndustrielleSerializer
 # EntrepriseMere Views
 class EntrepriseMereListCreateView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [AllowAny]
     queryset = EntrepriseMere.objects.all()
     serializer_class = EntrepriseMereSerializer
 
@@ -21,7 +21,8 @@ class EntrepriseListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
     queryset = Entreprise.objects.all()
     serializer_class = EntrepriseSerializer
-
+    def perform_create(self, serializer):  
+        instance = serializer.save() 
 
 class EntrepriseRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
@@ -42,7 +43,12 @@ class ActiviteIndusListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
     queryset = ActiviteIndustrielle.objects.all()
     serializer_class = ActiviteIndustrielleSerializer
-
+    def get_queryset(self):  
+        queryset = self.queryset  
+        id_secteur = self.request.query_params.get('id_secteur', None)  
+        if id_secteur is not None:  
+            queryset = queryset.filter(id_secteur=id_secteur)  # Filtrer par id_pref_prov  
+        return queryset 
 
 class ActiviteIndusRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
