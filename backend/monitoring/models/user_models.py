@@ -5,6 +5,7 @@ from dateutil.relativedelta import relativedelta
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import BaseUserManager
 from .enterprise_models import Entreprise  
+from .Map_models import Zone  
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -43,7 +44,7 @@ class Utilisateur(AbstractUser):
 
 
 class ResponsableSuiviTMSA(Utilisateur):
-    zone_de_suivi = models.CharField(max_length=255, null=True, blank=True)
+    id_zone = models.ForeignKey(Zone, on_delete=models.CASCADE , null=True)
 
 
 class Admin(Utilisateur):

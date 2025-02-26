@@ -6,7 +6,7 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import LanguageIcon from '@mui/icons-material/Language';
 import alae from '../../images/alae.jpg'; // Image par défaut
-import './Navbar.css';
+import './Navbar.scss';
 
 const Navbar = () => {
   const { user, logout } = useAuth(); // Utiliser le contexte d'authentification
@@ -27,14 +27,9 @@ const Navbar = () => {
   return (
     <div className="navbar">
       <div className="wrapper">
-      Bonjour {user ? user.nom : 'USER'} 
-
         <div className="search">
-          {/* Afficher le nom de l'utilisateur */}
-          <input type='text' placeholder='Search ...' />  
-          <SearchOutlinedIcon />  
+          Bonjour {user ? user.nom : 'USER'}
         </div>
-
         <div className="items">
           <div className="item">
             <LanguageIcon className="icon" />

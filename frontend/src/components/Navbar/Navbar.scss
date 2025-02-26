@@ -1,0 +1,102 @@
+.navbar {
+  height: 50px;
+  border-bottom: 0.5px solid rgb(231, 228, 228);
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #555;
+  background-color: #f6f6f6;
+  position: fixed;
+  top: 0;
+  left: 250px;
+  right: 0;
+  z-index: 10;
+
+  .wrapper {
+    width: 100%;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .search {
+      display: flex;
+      align-items: center;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .items {
+      display: flex;
+      align-items: center;
+
+      .item {
+        display: flex;
+        align-items: center;
+        margin-right: 20px;
+
+        .icon {
+          font-size: 20px;
+          color: #555;
+        }
+      }
+
+      .profile-dropdown {
+        position: relative;
+
+        .profile-dropdown-btn {
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+
+          .profile-img {
+            img {
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              border: 1px solid #333;
+            }
+          }
+        }
+
+        .profile-dropdown-list {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          background: white;
+          box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+          border-radius: 4px;
+          overflow: hidden;
+          z-index: 10;
+          list-style-type: none;
+          padding: 0;
+          margin: 0;
+          width: 150px;
+
+          .profile-dropdown-list-item {
+            padding: 10px 20px;
+            font-size: 14px;
+            list-style-type: none;
+
+            a {
+              display: flex;
+              align-items: center;
+              color: #333;
+              text-decoration: none;
+
+              &:hover {
+                color: #B69D3F;
+              }
+            }
+          }
+
+          hr {
+            margin: 5px 0;
+            border: none;
+            border-top: 1px solid #f0f0f0;
+          }
+        }
+      }
+    }
+  }
+}

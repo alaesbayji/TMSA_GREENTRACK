@@ -10,7 +10,7 @@ class ResponsableEntrepriseAdmin(admin.ModelAdmin):
 
 @admin.register(ResponsableSuiviTMSA)
 class ResponsableSuiviTMSAAdmin(admin.ModelAdmin):
-    list_display = ['nom', 'prenom', 'email', 'zone_de_suivi']
+    list_display = ['nom', 'prenom', 'email', 'id_zone']
 
 @admin.register(Admin)
 class AdminAdmin(admin.ModelAdmin):

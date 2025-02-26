@@ -1,31 +1,41 @@
 from django.urls import path  
 from rest_framework_simplejwt.views import TokenRefreshView  
 from . import views  
-from .views.auth_views import( LoginView,SignupView,TestTokenView)
-from .views.enterprise_views import (EntrepriseMereListCreateView,EntrepriseMereRetrieveUpdateDeleteView,EntrepriseListCreateView,EntrepriseRetrieveUpdateDeleteView,
+from .views.auth_views import( LoginView,SignupView,TestTokenView,UpdateUserView,ResponsableEntrepriseListView, ResponsableEntrepriseDeleteView,
+    ResponsableEntrepriseUpdateView, ResponsableSuiviDeleteView,
+    ResponsableSuiviUpdateView,ResponsableSuiviListView)
+from .views.enterprise_views import (ActiviteIndusListCreateViewbyid,EntrepriseMereListCreateView,EntrepriseMereRetrieveUpdateDeleteView,EntrepriseListCreateView,EntrepriseRetrieveUpdateDeleteView,
 ActiviteIndusListCreateView,ActiviteIndusRetrieveUpdateDeleteView,SecteurListCreateView,SecteurRetrieveUpdateDeleteView)
 from .views.aspect_views import (AspectListCreateView,AspectRetrieveUpdateDeleteView,IndicateurListCreateView,IndicateurRetrieveUpdateDeleteView,IndicateurEauPollutionListCreateView,IndicateurEauPollutionRetrieveUpdateDeleteView,
 SousAspectEauPollutionListCreateView,SousAspectEauPollutionRetrieveUpdateDeleteView)
 from .views.suivi_views import( EngagementCreateView,EngagementAspectCreateView,EngagementAspectRetrieveUpdateDeleteView,EngagementIndicateurRetrieveUpdateDeleteView,SuiviListCreateView,SuiviRetrieveUpdateDeleteView,
 SuiviIndicateurRetrieveUpdateDeleteView,EngagementIndicateurSousAspectCreateView,EngagementSousAspectEauPollutionCreateView,EngagementSousAspectRetrieveUpdateDeleteView,SuiviSousAspectListCreateView,SuiviSousAspectRetrieveUpdateDeleteView,
 SuiviIndicateurSousAspectRetrieveUpdateDeleteView)
-from .views.map_views import ImportShapefileView,CommuneListCreateView ,CommuneRetrieveUpdateDeleteView,ProvinceListCreateView,ProvinceRetrieveUpdateDeleteView,ParcelleListCreateView,ParcelleRetrieveUpdateDestroyView
+from .views.map_views import CommuneListCreateViewbyid_pref_prov,ZoneListCreateView,ZoneRetrieveUpdateDeleteView,ImportShapefileView,CommuneListCreateView ,CommuneRetrieveUpdateDeleteView,ProvinceListCreateView,ProvinceRetrieveUpdateDeleteView,ParcelleListCreateView,ParcelleRetrieveUpdateDestroyView
 urlpatterns = [  
     # Authentification  
     path('login/', LoginView.as_view(), name='login'),  
     path('signup/', SignupView.as_view(), name='signup'),  
     path('token/verify/', TestTokenView.as_view(), name='token_verify'),  
-
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('users/<int:pk>/update/', UpdateUserView.as_view(), name='update_user'),  
+    path('responsables-entreprise/', ResponsableEntrepriseListView.as_view(), name='responsables-entreprise-list'),
+    path('responsables-suivi/', ResponsableSuiviListView.as_view(), name='responsables-entreprise-list'),
+    path('responsables-entreprise/<int:pk>/delete/', ResponsableEntrepriseDeleteView.as_view(), name='responsables-entreprise-delete'),
+    path('responsables-entreprise/<int:pk>/update/', ResponsableEntrepriseUpdateView.as_view(), name='responsables-entreprise-update'),
+    path('responsables-suivi/<int:pk>/delete/', ResponsableSuiviDeleteView.as_view(), name='responsables-suivi-delete'),
+    path('responsables-suivi/<int:pk>/update/', ResponsableSuiviUpdateView.as_view(), name='responsables-suivi-update'),
+    # Entreprises  
     # Entreprises Mère  
     path('entreprise-mere/',EntrepriseMereListCreateView.as_view(), name='entreprise-mere-list-create'),  
     path('entreprise-mere/<int:pk>/', EntrepriseMereRetrieveUpdateDeleteView.as_view(), name='entreprise-mere-detail'),  
-
-    # Entreprises  
+  
     path('entreprise/', EntrepriseListCreateView.as_view(), name='entreprise-list-create'),  
     path('entreprise/<int:pk>/', EntrepriseRetrieveUpdateDeleteView.as_view(), name='entreprise-detail'),  
 
     # Activités  
     path('activites-industrielles/', ActiviteIndusListCreateView.as_view(), name='activite-industrielle-list-create'),  
+    path('activites-industriellesbyid/', ActiviteIndusListCreateViewbyid.as_view(), name='activite-industrielle-list-createbyid'),  
     path('activites-industrielles/<int:pk>/', ActiviteIndusRetrieveUpdateDeleteView.as_view(), name='activite-industrielle-detail'),  
 
     # Aspects  
@@ -50,9 +60,13 @@ urlpatterns = [
     # Provinces  
     path('province/', ProvinceListCreateView.as_view(), name='province-list-create'),  
     path('province/<int:pk>/', ProvinceRetrieveUpdateDeleteView.as_view(), name='province-detail'),  
+    # Zones  
+    path('zone/', ZoneListCreateView.as_view(), name='zone-list-create'),  
+    path('zone/<int:pk>/', ZoneRetrieveUpdateDeleteView.as_view(), name='zone-detail'),  
 
     # Communes  
     path('commune/', CommuneListCreateView.as_view(), name='commune-list-create'),  
+    path('communes/', CommuneListCreateViewbyid_pref_prov.as_view(), name='commune-list-createby_id_pref'),  
     path('commune/<int:pk>/', CommuneRetrieveUpdateDeleteView.as_view(), name='commune-detail'),  
 
     # Suivis  

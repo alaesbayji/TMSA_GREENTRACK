@@ -22,7 +22,9 @@ const Login = () => {
         email,
         password,
       });
-
+      localStorage.setItem('access', response.data.access);
+      localStorage.setItem('refresh', response.data.refresh);
+  
       if (response.data.user) {
         login(response.data.user); // Mettre à jour l'état de l'utilisateur
         navigate('/home'); // Rediriger vers la page d'accueil

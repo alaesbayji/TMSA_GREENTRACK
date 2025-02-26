@@ -1,6 +1,6 @@
 from rest_framework import generics,status
-from ..models.Map_models import PrefectureProvince, Commune,Parcelle
-from ..serializers.map_serializers import PrefectureProvinceSerializer, CommuneSerializer,ParcelleSerializer
+from ..models.Map_models import PrefectureProvince, Commune,Parcelle,Zone
+from ..serializers.map_serializers import PrefectureProvinceSerializer, CommuneSerializer,ParcelleSerializer,ZoneSerializer
 from rest_framework.permissions import AllowAny, IsAuthenticated
 import geopandas as gpd
 from django.http import JsonResponse
@@ -19,7 +19,17 @@ class ProvinceRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
     queryset = PrefectureProvince.objects.all()
     serializer_class = PrefectureProvinceSerializer
-class CommuneListCreateView(generics.ListCreateAPIView):
+class ZoneListCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    queryset = Zone.objects.all()
+    serializer_class = ZoneSerializer
+
+class ZoneRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [AllowAny]
+    queryset = Zone.objects.all()
+    serializer_class = ZoneSerializer
+
+class CommuneListCreateViewbyid_pref_prov(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
     queryset = Commune.objects.all()
     serializer_class = CommuneSerializer
@@ -29,6 +39,11 @@ class CommuneListCreateView(generics.ListCreateAPIView):
         if id_pref_prov is not None:  
             queryset = queryset.filter(id_pref_prov=id_pref_prov)  # Filtrer par id_pref_prov  
         return queryset  
+class CommuneListCreateView(generics.ListCreateAPIView):  
+    permission_classes = [AllowAny]
+
+    queryset = Commune.objects.all()  
+    serializer_class = CommuneSerializer  
 class ParcelleListCreateView(generics.ListCreateAPIView):  
     permission_classes = [AllowAny]
 
