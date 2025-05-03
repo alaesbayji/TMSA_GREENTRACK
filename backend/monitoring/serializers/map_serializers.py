@@ -13,10 +13,12 @@ class ZoneSerializer(serializers.ModelSerializer):
 
 
 class CommuneSerializer(serializers.ModelSerializer):
-    id_pref_prov = PrefectureProvinceSerializer(read_only=True)
+    id_pref_prov_details = PrefectureProvinceSerializer(source='id_pref_prov', read_only=True)  
+    id_pref_prov = serializers.PrimaryKeyRelatedField(queryset=PrefectureProvince.objects.all())
+
     class Meta:
         model = Commune
-        fields = ('id_commune', 'nom', 'id_pref_prov')
+        fields = ('id_commune', 'nom', 'id_pref_prov','id_pref_prov_details')
 
 class ParcelleSerializer(serializers.ModelSerializer):
     class Meta:

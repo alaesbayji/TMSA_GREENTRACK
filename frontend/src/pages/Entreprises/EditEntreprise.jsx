@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import Navbar from '../../components/Navbar/Navbar';
 import './Ajouter_entreprise1.scss'; // Utiliser le même fichier SCSS que Add_entreprise1
 
-const Ajouter_entreprise2 = () => {
-  const location = useLocation();
-  const { id_parcelle } = location.state || {};
+const EditEntreprise = () => {
+  const { id } = useParams(); // Récupère l'ID de l'entreprise depuis l'URL
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -39,6 +38,55 @@ const Ajouter_entreprise2 = () => {
   const [zones, setZones] = useState([]);
   const [isTFZ, setIsTFZ] = useState(false);
 
+  useEffect(() => {
+    const loadEntrepriseData = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/api/entreprise/${id}/`);
+        const entreprise = response.data;
+  
+        // Pré-remplir les données de l'entreprise
+        setFormData({
+          id_entreprise_mere: entreprise.id_entreprise_mere,
+          id_commune: entreprise.id_commune,
+          id_activite: entreprise.id_activite,
+          id_parcelle: entreprise.id_parcelle,
+          nom: entreprise.nom,
+          id_zone: entreprise.id_zone,
+          lot: entreprise.lot,
+          Ilot: entreprise.Ilot,
+          avenue: entreprise.avenue,
+          rue: entreprise.rue,
+          regime: entreprise.regime,
+          secteur: entreprise.secteur,
+          montant_investissement: entreprise.montant_investissement,
+          nombre_emploi: entreprise.nombre_emploi,
+          superficie_totale: entreprise.superficie_totale,
+          DAE: null, // Ne pas pré-remplir les fichiers pour éviter des problèmes de sécurité
+          EIE_PSSE: null,
+        });
+  
+        // Charger les communes en fonction de la province
+        if (entreprise.id_commune_detail?.id_pref_prov) {
+          setSelectedProvince(entreprise.id_commune_detail.id_pref_prov);
+          const communesResponse = await axios.get(`http://localhost:8000/api/communes/?id_pref_prov=${entreprise.id_commune_detail.id_pref_prov}`);
+          setCommunes(communesResponse.data);
+        }
+  
+        // Charger les activités en fonction du secteur
+        if (entreprise.id_activite_detail?.id_secteur) {
+          setSelectedSecteur(entreprise.id_activite_detail.id_secteur);
+          const activitesResponse = await axios.get(`http://localhost:8000/api/activites-industriellesbyid/?id_secteur=${entreprise.id_activite_detail.id_secteur}`);
+          setActivites(activitesResponse.data);
+        }
+      } catch (error) {
+        alert('Erreur lors du chargement des données de l\'entreprise');
+      }
+    };
+  
+    loadEntrepriseData();
+  }, [id]);
+
+  // Charger les listes déroulantes
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -121,29 +169,26 @@ const Ajouter_entreprise2 = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('FormData avant envoi:', formData); // Vérifiez ici
 
     const formDataToSend = new FormData();
     for (const key in formData) {
-      if (formData[key] !== null) {
+      if (formData[key] !== null && formData[key] !== '') {
         formDataToSend.append(key, formData[key]);
       }
     }
-    formDataToSend.append('id_parcelle', id_parcelle);
-    for (const [key, value] of formDataToSend.entries()) {
-      console.log(key, value);
-    }
-  
+    console.log(formData)
+
+    console.log(formDataToSend)
     try {
-      await axios.post('http://localhost:8000/api/entreprise/', formDataToSend, {
+      await axios.put(`http://localhost:8000/api/entreprise/${id}/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      alert('Entreprise ajoutée avec succès!');
+      alert('Entreprise modifiée avec succès!');
       navigate('/List_entreprise');
     } catch (error) {
-      alert(`Erreur lors de l'ajout de l'entreprise: ${error.response?.data?.error || error.message}`);
+      alert(`Erreur lors de la modification de l'entreprise: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -153,11 +198,11 @@ const Ajouter_entreprise2 = () => {
       <div className="newContainer">
         <Navbar />
         <div className="top">
-          <h1>Ajouter une entreprise</h1>
+          <h1>Modifier une entreprise</h1>
         </div>
         <div className="bottom">
           <form onSubmit={handleSubmit}>
-            <h3>Informations Générales</h3>
+          <h3>Informations Générales</h3>
             <div className="formSection">
               <div className="formInput">
                 <label>Entreprise mère:</label>
@@ -261,7 +306,7 @@ const Ajouter_entreprise2 = () => {
                 <input
                   type="text"
                   name="parcelle"
-                  value={id_parcelle}
+                  value={formData.id_parcelle}
                   readOnly
                   required
                 />
@@ -401,8 +446,7 @@ const Ajouter_entreprise2 = () => {
                 />
               </div>
             </div>
-
-            <button className="button" type="submit">Ajouter l'entreprise</button>
+            <button className="button" type="submit">Modifier l'entreprise</button>
           </form>
         </div>
       </div>
@@ -410,4 +454,4 @@ const Ajouter_entreprise2 = () => {
   );
 };
 
-export default Ajouter_entreprise2;
+export default EditEntreprise;

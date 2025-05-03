@@ -18,9 +18,9 @@ const Datatable_users = () => {
         const response = await api.get('http://localhost:8000/api/responsables-entreprise/');
         const dataWithIds = response.data.map((item, index) => ({
           ...item,
-          id: item.idUtilisateur || index,
-          zoneName: item.id_entreprise?.id_zone?.nom || 'N/A',  // Récupérer le nom de la zone
-          entreprise: item.id_entreprise?.nom || 'N/A',  // Récupérer le nom de la zone
+          id: item.idUtilisateur ,
+          zoneName: item.id_entreprise_detail?.id_zone_detail?.nom || 'N/A',  // Récupérer le nom de la zone
+          entreprise: item?.id_entreprise_detail?.nom || 'N/A',  // Récupérer le nom de la zone
         }));
         setData(dataWithIds);
       } catch (error) {

@@ -19,7 +19,7 @@ const Datatable_suivi = () => {
         const dataWithIds = response.data.map((item, index) => ({
           ...item,
           id: item.idUtilisateur || index,
-          zone: item.id_zone?.nom || 'N/A',  // Récupérer le nom de la zone
+          zone: item.id_zone_detail?.nom || 'N/A',  // Récupérer le nom de la zone
           // Utilisez `idUtilisateur` ou un index comme clé
         }));
         setData(dataWithIds);
@@ -65,7 +65,7 @@ const Datatable_suivi = () => {
   };
 
   const handleView = (userData) => {
-    navigate(`/users/${userData.id}`, { state: { id: userData.id } });
+    navigate(`/res_suivi/${userData.id}`, { state: { id: userData.id } });
   };
 
   const userColumns = [

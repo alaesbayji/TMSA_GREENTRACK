@@ -127,10 +127,11 @@ class UpdateUserView(APIView):
 
 class ResponsableEntrepriseListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        queryset = ResponsableEntreprise.objects.select_related('id_entreprise__id_zone').all()
-        serializer_class = SignupSerializer(queryset, many=True)
-        return Response(serializer_class.data)
+        queryset = ResponsableEntreprise.objects.select_related('id_entreprise', 'id_entreprise__id_zone').all()
+        serializer = SignupSerializer(queryset, many=True)
+        return Response(serializer.data)
 
 class ResponsableEntrepriseDeleteView(APIView):
     permission_classes = [IsAuthenticated]
@@ -148,20 +149,31 @@ class ResponsableEntrepriseUpdateView(APIView):
     def put(self, request, pk):
         try:
             responsable = ResponsableEntreprise.objects.get(pk=pk)
-            serializer = SignupSerializer(responsable, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except ResponsableEntreprise.DoesNotExist:
             return Response({"error": "Responsable d'entreprise non trouvé."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Si le mot de passe est fourni, vérifiez la confirmation
+        password = request.data.get('password')
+        # Si le mot de passe est vide, retirez-le des données pour ne pas le mettre à jour
+        if not password:
+            request.data.pop('password', None)
+        # Hash le nouveau mot de passe s'il est fourni
+        if password:
+            request.data['password'] = make_password(password)
+
+        # Mise à jour partielle des données
+        serializer = SignupSerializer(responsable, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class ResponsableSuiviListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         queryset = ResponsableSuiviTMSA.objects.select_related('id_zone').all()
-        serializer_class = SignupSerializer(queryset, many=True)
-        return Response(serializer_class.data)
+        serializer = SignupSerializer(queryset, many=True)
+        return Response(serializer.data)
 class ResponsableSuiviDeleteView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -178,10 +190,41 @@ class ResponsableSuiviUpdateView(APIView):
     def put(self, request, pk):
         try:
             responsable = ResponsableSuiviTMSA.objects.get(pk=pk)
-            serializer = SignupSerializer(responsable, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ResponsableSuiviTMSA.DoesNotExist:
+            return Response({"error": "Responsable de suivi non trouvé."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Si le mot de passe est fourni, vérifiez la confirmation
+        password = request.data.get('password')
+        # Si le mot de passe est vide, retirez-le des données pour ne pas le mettre à jour
+        if not password:
+            request.data.pop('password', None)
+        # Hash le nouveau mot de passe s'il est fourni
+        if password:
+            request.data['password'] = make_password(password)
+
+        # Mise à jour partielle des données
+        serializer = SignupSerializer(responsable, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class ResponsableEntrepriseDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            responsable = ResponsableEntreprise.objects.select_related('id_entreprise', 'id_entreprise__id_zone').get(pk=pk)
+            serializer = SignupSerializer(responsable)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except ResponsableEntreprise.DoesNotExist:
             return Response({"error": "Responsable d'entreprise non trouvé."}, status=status.HTTP_404_NOT_FOUND)
+class ResponsableSuiviDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            responsable = ResponsableSuiviTMSA.objects.select_related('id_zone').get(pk=pk)
+            serializer = SignupSerializer(responsable)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except ResponsableSuiviTMSA.DoesNotExist:
+            return Response({"error": "Responsable de suivi non trouvé."}, status=status.HTTP_404_NOT_FOUND)

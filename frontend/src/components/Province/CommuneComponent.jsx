@@ -120,7 +120,7 @@ const CommuneComponent = () => {
       flex: 1,
       renderCell: (params) => (
         <>
-          <button className="actionButton" onClick={() => handleEditCommune(params.row)}>
+          <button className="viewButton" onClick={() => handleEditCommune(params.row)}>
             Modifier
           </button>
           <button className="deleteButton" onClick={() => deleteCommune(params.row.id)}>
@@ -175,7 +175,7 @@ const CommuneComponent = () => {
           </button>
         </div>
       </form>
-      <Paper sx={{ height: 'auto', width: '100%', '& .MuiDataGrid-columnHeader': { backgroundColor: '#f9f9f9' } }}>
+      <Paper sx={{ marginTop:'10px',height: 'auto', width: '100%', '& .MuiDataGrid-columnHeader': { backgroundColor: '#f9f9f9' } }}>
         <DataGrid rows={communes} columns={columnsCommune} pageSize={5} rowsPerPageOptions={[5]} style={{ backgroundColor: '#f9f9f9' }} />
       </Paper>
     </div>

@@ -8,6 +8,7 @@ import ShowAlert from "../../components/ShowAlert";
 
 const AddResponsableEntreprise = () => {  
   const navigate = useNavigate();  
+  const [confirmPassword, setConfirmPassword] = useState(''); // New state for confirmation password  
 
   const [entreprises, setEntreprises] = useState([]);  
   const [formData, setFormData] = useState({  
@@ -36,17 +37,25 @@ const AddResponsableEntreprise = () => {
 
   const handleChange = (e) => {  
     const { name, value } = e.target;  
-    setFormData((prevState) => ({  
-      ...prevState,  
-      [name]: value,  
-    }));  
+    if (name === 'confirm_password') {  
+      setConfirmPassword(value); // Update confirm password separately  
+    } else {  
+      setFormData((prevState) => ({  
+        ...prevState,  
+        [name]: value,  
+      }));  
+    }  
   };  
 
   const handleSubmit = async (e) => {  
     e.preventDefault();  
     setLoading(true);  
     console.log('Données envoyées :', formData); // Ajoutez cette ligne
-
+    if (formData.password !== confirmPassword) {  
+      ShowAlert('error', "Les mots de passe ne correspondent pas.");  
+      setLoading(false);  
+      return;  
+    }  
     try {  
        await axios.post('http://localhost:8000/api/signup/', formData, {  
         headers: {  
@@ -117,15 +126,16 @@ const AddResponsableEntreprise = () => {
       </div>  
     </div>  
     <div className="formRowuser ">  
-      <div className="formInputuser ">  
-        <label>Confirmer le mot de passe:</label>  
-        <input  
-          type="password"  
-          name="confirmPassword"  
-          onChange={handleChange}  
-          required  
-        />  
-      </div>  
+    <div className="formInputuser">  
+                <label>Confirmer le mot de passe:</label>  
+                <input  
+                  type="password"  
+                  name="confirm_password"  
+                  value={confirmPassword} // Use the separate state  
+                  onChange={handleChange}  
+                  placeholder="Confirmez le mot de passe"  
+                />  
+              </div>  
       <div className="formInputuser ">  
         <label>Entreprise:</label>  
         <select  

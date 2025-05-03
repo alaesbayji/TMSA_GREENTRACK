@@ -22,11 +22,11 @@ const Datatable_entreprise = () => {
         // Ajouter une propriété `id` à chaque entreprise
         const entreprisesWithIds = response.data.map((entreprise, index) => ({
           ...entreprise,
-          id: entreprise.id || index + 1,
-          zone: entreprise.id_zone?.nom || 'N/A',  // Récupérer le nom de la zone
-          province: entreprise.id_commune.id_pref_prov?.nom || 'N/A',  // Récupérer le nom de la zone
-          commune: entreprise.id_commune?.nom || 'N/A',  // Récupérer le nom de la zone
-          secteur: entreprise.id_activite.id_secteur?.nom || 'N/A',  // Récupérer le nom de la zone
+          id: entreprise.id_entreprise || index + 1,
+          zone: entreprise.id_zone_detail?.nom || 'N/A',  // Récupérer le nom de la zone
+          province: entreprise.id_commune_detail?.id_pref_prov_details?.nom || 'N/A',  // Récupérer le nom de la zone
+          commune: entreprise.id_commune_detail?.nom || 'N/A',  // Récupérer le nom de la zone
+          secteur: entreprise.id_activite_detail?.id_secteur_detail?.nom|| 'N/A',  // Récupérer le nom de la zone
         }));
 
         setData(entreprisesWithIds);
@@ -62,7 +62,7 @@ const Datatable_entreprise = () => {
     if (!confirmed) return;
 
     try {
-      await api.delete(`http://127.0.0.1:8000/api/entreprise/${entrepriseData.id}/delete/`);
+      await api.delete(`http://127.0.0.1:8000/api/entreprise/${entrepriseData.id}/`);
       setData(data.filter((item) => item.id !== entrepriseData.id));
       ShowAlert("success", "Entreprise supprimée avec succès !");
     } catch (error) {
@@ -75,7 +75,7 @@ const Datatable_entreprise = () => {
   };
 
   const handleView = (entrepriseData) => {
-    navigate(`/entreprises/${entrepriseData.id}`, { state: { id: entrepriseData.id } });
+    navigate(`/entreprise/${entrepriseData.id}`, { state: { id: entrepriseData.id } });
   };
 
   const columnsEntreprise = [

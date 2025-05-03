@@ -16,17 +16,22 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SouthAmericaIcon from '@mui/icons-material/SouthAmerica';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import logo from '../../images/1.png';
+import { useAuth } from '../../AuthContext';
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogout = () => {
-    console.log('User logged out');
-    navigate('/');
-  };
+
 
   const isActive = (...paths) => paths.includes(location.pathname);
+  const { user, logout } = useAuth(); // Utiliser le contexte d'authentification
+
+  // Gérer la déconnexion
+  const handleLogout = () => {
+    logout(); // Appeler la fonction de déconnexion du contexte
+    navigate('/login'); // Rediriger vers la page de connexion
+  };
 
   return (
     <div className='sidebar'>
@@ -94,13 +99,7 @@ const Sidebar = () => {
           <Link to="/aspect" style={{ textDecoration: 'none' }}>
             <li className={isActive('/aspect') ? 'active' : ''}>
               <SouthAmericaIcon className="icon" />
-              <span>Aspect</span>
-            </li>
-          </Link>
-          <Link to="/indicateurs" style={{ textDecoration: 'none' }}>
-            <li className={isActive('/indicateurs') ? 'active' : ''}>
-              <AvTimerIcon className="icon" />
-              <span>Indicateurs</span>
+              <span>Aspect & Indicateurs</span>
             </li>
           </Link>
           <Link to="/Province" style={{ textDecoration: 'none' }}>

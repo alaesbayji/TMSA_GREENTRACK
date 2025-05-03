@@ -1,7 +1,8 @@
 from django.db import models
 from dateutil.relativedelta import relativedelta
-from ..models.aspect_models import SousAspectEau,IndicateurEauPollution,Indicateur
+from ..models.aspect_models import SousAspectEau,IndicateurEauPollution,Indicateur,IndicateurSousAspect
 from ..models.enterprise_models import ActiviteIndustrielle,Entreprise
+from django.db.models import Q
 
 class EngagementAspect(models.Model):  
     FREQUENCY_CHOICES = [  
@@ -26,12 +27,19 @@ class EngagementAspect(models.Model):
 
     class Meta:  
         constraints = [  
-            models.UniqueConstraint(  
-            fields=['id_aspect', 'id_sous_aspect_eau'],  
-            name='unique_engagement_aspect_aspect',  
-            condition=models.Q(id_sous_aspect_eau__isnull=False)  # Appliquer uniquement si id_sous_aspect_eau est non nul
-        )  
-    ] 
+            # Contrainte d'unicité pour id_entreprise et id_aspect
+            models.UniqueConstraint(
+                fields=['id_entreprise', 'id_aspect'],
+                name='unique_engagement_aspect_entreprise_aspect',
+                condition=Q(id_sous_aspect_eau__isnull=True),  # Appliquer uniquement si id_sous_aspect_eau est nul
+            ),
+            # Contrainte d'unicité pour id_entreprise, id_aspect et id_sous_aspect_eau
+            models.UniqueConstraint(
+                fields=['id_entreprise', 'id_aspect', 'id_sous_aspect_eau'],
+                name='unique_engagement_aspect_entreprise_aspect_sous_aspect',
+                condition=Q(id_sous_aspect_eau__isnull=False),  # Appliquer uniquement si id_sous_aspect_eau est non nul
+            ),
+        ]
 
     def generer_prochaine_echeance(self):  
         """Génère la prochaine échéance et crée un suivi"""  
@@ -142,7 +150,91 @@ class EngagementSousAspectEauPollution(models.Model):
         self.save()  
 
         if self.date_prochaine_echeance:  
-            SuiviSousAspect.objects.create(  
+            SuiviSousAspectPollution.objects.create(  
+                id_engagement_sous_aspect=self,  
+                date_limite=self.date_prochaine_echeance,  
+                statut="en attente"  
+            )  
+
+    def calculer_prochaine_date(self):  
+        """Calculer la date en fonction de la fréquence"""  
+        if self.frequence:  
+            # Mapping de la fréquence à des mois  
+            frequence_mois = {  
+                1: 1,   # Mensuel  
+                2: 3,   # Trimestriel  
+                3: 6,   # Semestriel  
+                4: 12,  # Bisannuel  
+                5: 36,  # Triennal  
+            }  
+            return self.date_creation + relativedelta(months=frequence_mois[self.frequence])  
+        return None
+
+class EngagementIndicateurSousAspectPollution(models.Model):
+    id_engagement_indicateur_sous_aspect = models.AutoField(primary_key=True)
+    id_indicateur_eaupollution = models.ForeignKey(IndicateurEauPollution, on_delete=models.CASCADE)
+    id_engagement_sous_aspect = models.ForeignKey(EngagementSousAspectEauPollution, on_delete=models.CASCADE, related_name='engagements_indicateurs')
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['id_engagement_sous_aspect', 'id_indicateur_eaupollution'], name='unique_engagement_sous_aspect_indicateur')
+        ]
+    
+    def __str__(self):
+        return f"{self.id_engagement_sous_aspect} - {self.id_indicateur.nom}"
+
+class SuiviSousAspectPollution(models.Model):
+    id_suivi_sous_aspect = models.AutoField(primary_key=True)
+    id_engagement_sous_aspect = models.ForeignKey(EngagementSousAspectEauPollution, on_delete=models.CASCADE, related_name='suivis')
+    date_mesure = models.DateField(null=True, blank=True)
+    date_limite = models.DateField(null=True, blank=True)
+    justificatif_etude = models.FileField(upload_to='justificatifs/', null=True, blank=True)
+    statut = models.CharField(max_length=20, choices=[('en attente', 'En attente'), ('effectué', 'Effectué'), ('effectué_Retard', 'Effectué_Retard')], default='en attente')
+    cloturer = models.BooleanField(default=False)  # Nouveau champ
+
+    def mettre_a_jour_statut(self):
+        if self.date_mesure:
+            self.statut = 'effectué' if self.date_mesure <= self.date_limite else 'effectué_Retard'
+            self.save()
+
+class SuiviIndicateurSousAspectPollution(models.Model):
+    id_suivi_indicateur_sous_aspect = models.AutoField(primary_key=True)
+    suivi = models.ForeignKey(SuiviSousAspectPollution, on_delete=models.CASCADE, related_name='suivi_indicateurs')
+    engagement_indicateur_sous_aspect = models.ForeignKey(EngagementIndicateurSousAspectPollution, on_delete=models.CASCADE)
+    valeur_mesure = models.FloatField()
+    observations = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['suivi', 'engagement_indicateur_sous_aspect'], name='unique_suivi_indicateur_sous_aspectpollution')
+        ]
+#---------------------------------------------------------
+class EngagementSousAspect(models.Model):
+    FREQUENCY_CHOICES = [  
+        (1, 'Mensuel (12 fois par an)'),  # 1 mois  
+        (2, 'Trimestriel (4 fois par an)'),  # 3 mois  
+        (3, 'Semestriel (2 fois par an)'),  # 6 mois  
+        (4, 'Bisannuel (1 fois par 2 ans)'),  # 12 mois  
+        (5, 'Triennal (1 fois par 3 ans)'),  # 36 mois  
+    ]  
+
+    id_engagement_sous_aspect = models.AutoField(primary_key=True)
+    id_sous_aspect = models.ForeignKey(SousAspectEau, on_delete=models.CASCADE, limit_choices_to={'est_pollution': False})
+    id_entreprise = models.ForeignKey('Entreprise', on_delete=models.CASCADE)
+    lieu_prelevement = models.CharField(max_length=255)
+    methode_equipement = models.CharField(max_length=255)
+    frequence = models.IntegerField(choices=FREQUENCY_CHOICES)  # Utilisation des choix pour la fréquence  
+    responsabilite = models.CharField(max_length=255)
+    date_creation = models.DateField(auto_now_add=True)
+    date_prochaine_echeance = models.DateField(null=True, blank=True)
+
+    def generer_prochaine_echeance(self):  
+        """Génère la prochaine échéance et crée un suivi"""  
+        self.date_prochaine_echeance = self.calculer_prochaine_date()  
+        self.save()  
+
+        if self.date_prochaine_echeance:  
+            SuiviSousAspectPollution.objects.create(  
                 id_engagement_sous_aspect=self,  
                 date_limite=self.date_prochaine_echeance,  
                 statut="en attente"  
@@ -164,20 +256,14 @@ class EngagementSousAspectEauPollution(models.Model):
 
 class EngagementIndicateurSousAspect(models.Model):
     id_engagement_indicateur_sous_aspect = models.AutoField(primary_key=True)
-    id_indicateur_eaupollution = models.ForeignKey(IndicateurEauPollution, on_delete=models.CASCADE)
-    id_engagement_sous_aspect = models.ForeignKey(EngagementSousAspectEauPollution, on_delete=models.CASCADE, related_name='engagements_indicateurs')
-    
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['id_engagement_sous_aspect', 'id_indicateur_eaupollution'], name='unique_engagement_sous_aspect_indicateur')
-        ]
-    
-    def __str__(self):
-        return f"{self.id_engagement_sous_aspect} - {self.id_indicateur.nom}"
+    id_indicateur_sous_aspect = models.ForeignKey(IndicateurSousAspect, on_delete=models.CASCADE,null=True, blank=True)
+    id_engagement_sous_aspect = models.ForeignKey(EngagementSousAspect, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return f"Engagement pour {self.id_indicateur_sous_aspect.nom}"
 class SuiviSousAspect(models.Model):
     id_suivi_sous_aspect = models.AutoField(primary_key=True)
-    id_engagement_sous_aspect = models.ForeignKey(EngagementSousAspectEauPollution, on_delete=models.CASCADE, related_name='suivis')
+    id_engagement_sous_aspect = models.ForeignKey(EngagementSousAspect, on_delete=models.CASCADE, related_name='suivis')
     date_mesure = models.DateField(null=True, blank=True)
     date_limite = models.DateField(null=True, blank=True)
     justificatif_etude = models.FileField(upload_to='justificatifs/', null=True, blank=True)

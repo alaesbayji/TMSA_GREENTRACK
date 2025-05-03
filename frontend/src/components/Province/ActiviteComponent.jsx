@@ -120,7 +120,7 @@ const ActiviteComponent = () => {
       flex: 1,
       renderCell: (params) => (
         <>
-          <button className="actionButton" onClick={() => handleEditActivite(params.row)}>
+          <button className="viewButton" onClick={() => handleEditActivite(params.row)}>
             Modifier
           </button>
           <button className="deleteButton" onClick={() => deleteActivite(params.row.id)}>
@@ -175,7 +175,7 @@ const ActiviteComponent = () => {
           </button>
         </div>
       </form>
-      <Paper sx={{ height: 'auto', width: '100%', '& .MuiDataGrid-columnHeader': { backgroundColor: '#f9f9f9' } }}>
+      <Paper sx={{ marginTop:'10px', height: 'auto', width: '100%', '& .MuiDataGrid-columnHeader': { backgroundColor: '#f9f9f9' } }}>
         <DataGrid rows={activites} columns={columnsActivites} pageSize={5} rowsPerPageOptions={[5]} style={{ backgroundColor: '#f9f9f9' }} />
       </Paper>
     </div>

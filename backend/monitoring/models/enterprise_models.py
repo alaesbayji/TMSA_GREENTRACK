@@ -25,7 +25,7 @@ def set_entreprise_file_path(instance, filename):
 class Entreprise(models.Model):  
     id_entreprise = models.AutoField(primary_key=True)  
     id_entreprise_mere = models.ForeignKey('EntrepriseMere', on_delete=models.CASCADE, null=True, blank=True)  
-    id_commune = models.ForeignKey('Commune', on_delete=models.CASCADE)  
+    id_commune = models.ForeignKey('Commune', on_delete=models.CASCADE, null=True, blank=True)  
     id_activite = models.ForeignKey('ActiviteIndustrielle', on_delete=models.CASCADE, null=True, blank=True)  
     id_parcelle = models.OneToOneField('Parcelle', on_delete=models.SET_NULL, null=True, blank=True)  
     id_zone = models.ForeignKey('Zone', on_delete=models.CASCADE, null=True, blank=True)   

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import Paper from '@mui/material/Paper';
 import axios from 'axios';
+import './Datatableforms.scss'; // Utiliser le même fichier SCSS
 
 const ProvinceComponent = () => {
   const [provinces, setProvinces] = useState([]);
@@ -99,7 +100,7 @@ const ProvinceComponent = () => {
       flex: 1,
       renderCell: (params) => (
         <>
-          <button className="actionButton" onClick={() => handleEditProvince(params.row)}>
+          <button className="viewButton" onClick={() => handleEditProvince(params.row)}>
             Modifier
           </button>
           <button className="deleteButton" onClick={() => deleteProvince(params.row.id)}>
@@ -136,7 +137,7 @@ const ProvinceComponent = () => {
           </button>
         </div>
       </form>
-      <Paper sx={{ height: 'auto', width: '100%', '& .MuiDataGrid-columnHeader': { backgroundColor: '#f9f9f9' } }}>
+      <Paper sx={{marginTop:'10px',height: 'auto', width: '100%', '& .MuiDataGrid-columnHeader': { backgroundColor: '#f9f9f9' } }}>
         <DataGrid rows={provinces} columns={columnsProvince} pageSize={5} rowsPerPageOptions={[5]} style={{ backgroundColor: '#f9f9f9' }} />
       </Paper>
     </div>

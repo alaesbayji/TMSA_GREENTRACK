@@ -1,7 +1,7 @@
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from ..models.aspect_models import Aspect, Indicateur, SousAspectEau, IndicateurEauPollution
-from ..serializers.aspect_serializers import AspectSerializer, IndicateurSerializer, SousAspectEauPollutionSerializer, IndicateurEauPollutionSerializer
+from ..models.aspect_models import Aspect, Indicateur, SousAspectEau, IndicateurEauPollution,IndicateurSousAspect
+from ..serializers.aspect_serializers import IndicateurSousAspectSerializer,AspectSerializer, IndicateurSerializer, SousAspectEauPollutionSerializer, IndicateurEauPollutionSerializer
 # Aspect Views
 class AspectListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
@@ -35,11 +35,20 @@ class SousAspectEauPollutionRetrieveUpdateDeleteView(generics.RetrieveUpdateDest
 # Indicateur Views
 class IndicateurListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
-    queryset = Indicateur.objects.all()
     serializer_class = IndicateurSerializer
-
+    def get_queryset(self):
+        # Filtrer les indicateurs liés à des aspects où est_eau = False
+        return Indicateur.objects.filter(id_aspect__est_eau=False)
 
 class IndicateurRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
-    queryset = Indicateur.objects.all()
     serializer_class = IndicateurSerializer
+
+class IndicateurSousAspectListCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    queryset = IndicateurSousAspect.objects.all()
+    serializer_class = IndicateurSousAspectSerializer
+class IndicateurSousAspectRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [AllowAny]
+    queryset = IndicateurSousAspect.objects.all()
+    serializer_class = IndicateurSousAspectSerializer

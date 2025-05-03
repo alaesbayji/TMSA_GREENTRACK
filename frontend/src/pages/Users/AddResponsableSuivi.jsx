@@ -8,6 +8,7 @@ import ShowAlert from "../../components/ShowAlert";
 
 const AddResponsableSuivi = () => {  
   const navigate = useNavigate();  
+  const [confirmPassword, setConfirmPassword] = useState(''); // New state for confirmation password  
 
   const [zones, setZones] = useState([]);  
   const [formData, setFormData] = useState({  
@@ -37,16 +38,24 @@ const AddResponsableSuivi = () => {
 
   const handleChange = (e) => {  
     const { name, value } = e.target;  
-    setFormData((prevState) => ({  
-      ...prevState,  
-      [name]: value,  
-    }));  
+    if (name === 'confirm_password') {  
+      setConfirmPassword(value); // Update confirm password separately  
+    } else {  
+      setFormData((prevState) => ({  
+        ...prevState,  
+        [name]: value,  
+      }));  
+    }  
   };  
 
   const handleSubmit = async (e) => {  
     e.preventDefault();  
     setLoading(true);  
-
+    if (formData.password !== confirmPassword) {  
+      ShowAlert('error', "Les mots de passe ne correspondent pas.");  
+      setLoading(false);  
+      return;  
+    }  
     try {  
        await axios.post('http://localhost:8000/api/signup/', formData, {  
         headers: {  
@@ -122,14 +131,15 @@ const AddResponsableSuivi = () => {
             <div className="formRowuser">  
 
             <div className="formInputuser">  
-              <label>Confirmer le mot de passe:</label>  
-              <input  
-                type="password"  
-                // Le champ de confirmation de mot de passe est géré uniquement en frontend  
-                onChange={handleChange}  
-                required  
-              />  
-            </div>  
+                <label>Confirmer le mot de passe:</label>  
+                <input  
+                  type="password"  
+                  name="confirm_password"  
+                  value={confirmPassword} // Use the separate state  
+                  onChange={handleChange}  
+                  placeholder="Confirmez le mot de passe"  
+                />  
+              </div>  
             <div className="formInputuser">  
               <label>Zone De Suivi</label>  
               <select  

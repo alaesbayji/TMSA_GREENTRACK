@@ -11,13 +11,16 @@ from .enterprise_serializers  import EntrepriseSerializer
 from ..serializers.map_serializers import ZoneSerializer
 
 class SignupSerializer(serializers.ModelSerializer):
-    id_entreprise = EntrepriseSerializer(read_only=True)  # Inclure les détails de l'entreprise
-    id_zone = ZoneSerializer(read_only=True)
+
+    id_zone_detail = ZoneSerializer(source='id_zone',read_only=True)
     role = serializers.CharField(write_only=True)
-    
+    id_zone = serializers.PrimaryKeyRelatedField(queryset=Zone.objects.all(), allow_null=True, required=False)  
+    id_entreprise_detail = EntrepriseSerializer(source='id_entreprise',read_only=True)  # Inclure les détails de l'entreprise
+    id_entreprise = serializers.PrimaryKeyRelatedField(queryset=Entreprise.objects.all(), allow_null=True, required=False)  
+
     class Meta:
         model = Utilisateur
-        fields = ('nom', 'prenom', 'email', 'password', 'id_entreprise', 'id_zone', 'role')
+        fields = ('idUtilisateur','nom', 'prenom', 'email', 'password', 'id_entreprise','id_entreprise_detail', 'id_zone','id_zone_detail', 'role')
         extra_kwargs = {
             'password': {'write_only': True},
             'id_entreprise': {'required': False},

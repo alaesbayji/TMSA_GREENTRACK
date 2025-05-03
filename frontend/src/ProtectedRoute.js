@@ -10,7 +10,7 @@ const ProtectedRoute = ({ roles }) => {
   }
 
   if (!user) {
-    return <Navigate to="/" />; // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
+    return <Navigate to="/login" />; // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
   }
 
   if (roles && !roles.includes(user.role)) {

@@ -18,19 +18,23 @@ class EntrepriseMereRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIVi
 
 
 # Entreprise Views
-class EntrepriseListCreateView(generics.ListCreateAPIView):
-    permission_classes = [AllowAny]
-    def get(self, request):
-        queryset = Entreprise.objects.select_related('id_activite').all()
-        serializer_class = EntrepriseSerializer(queryset, many=True)
-        return Response(serializer_class.data)
-    def perform_create(self, serializer):  
-        instance = serializer.save() 
+class EntrepriseListCreateView(generics.ListCreateAPIView):  
+    permission_classes = [AllowAny]  
+    serializer_class = EntrepriseSerializer  
 
-class EntrepriseRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [AllowAny]
-    queryset = Entreprise.objects.all()
-    serializer_class = EntrepriseSerializer
+    def get_queryset(self):  
+        return Entreprise.objects.select_related(  
+            'id_commune', 'id_activite', 'id_zone', 'id_entreprise_mere'  
+        ).all()  # Pre-chargement des relations pour optimiser les performances  
+
+class EntrepriseRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):  
+    permission_classes = [AllowAny]  
+    serializer_class = EntrepriseSerializer  
+
+    def get_queryset(self):  
+        return Entreprise.objects.select_related(  
+            'id_commune', 'id_activite', 'id_zone', 'id_entreprise_mere'  
+        ).all()  
 
 class SecteurListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
@@ -54,11 +58,16 @@ class ActiviteIndusListCreateViewbyid(generics.ListCreateAPIView):
         return queryset 
 class ActiviteIndusListCreateView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
-    def get(self, request):
-        queryset = ActiviteIndustrielle.objects.select_related('id_secteur').all()
-        serializer_class = ActiviteIndustrielleSerializer(queryset, many=True)
-        return Response(serializer_class.data)
+    serializer_class = ActiviteIndustrielleSerializer
+    def get_queryset(self):  
+        return ActiviteIndustrielle.objects.select_related(  
+            'id_secteur' 
+        ).all()  # Pre-chargement des relations pour optimiser les performances  
+
 class ActiviteIndusRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny]
-    queryset = ActiviteIndustrielle.objects.all()
     serializer_class = ActiviteIndustrielleSerializer
+    def get_queryset(self):  
+        return ActiviteIndustrielle.objects.select_related(  
+            'id_secteur' 
+        ).all() 
